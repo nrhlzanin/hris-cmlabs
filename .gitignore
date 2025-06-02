@@ -1,0 +1,19 @@
+# Laravel (backend)
+backend/vendor/
+backend/.env
+backend/storage/*.key
+backend/node_modules/
+
+# Next.js (frontend)
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+frontend/.env
+frontend/out/
+
+# Mac / Windows OS files (optional)
+.DS_Store
+Thumbs.db
+
+# VS Code settings (optional)
+.vscode/
