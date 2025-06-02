@@ -1,16 +1,22 @@
-## Mulai Development
-Jalankan Laravel backend:
+# HRIS - CMLABS
 
-``cd backend``
+This is a fullstack Human Resource Information System project using:
 
-``php artisan serve``
+- **Frontend**: Next.js (in `/frontend`)
+- **Backend**: Laravel (in `/backend`)
 
-Defaultnya di http://localhost:8000
+## How to Run
 
-Jalankan Next.js frontend:
+### Backend (Laravel)
+```bash
+cd backend
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan serve
 
-``cd frontend``
-
-``npm run dev``
-
-Defaultnya di http://localhost:3000
+### Frontend (Next.js)
+```bash
+cd frontend
+npm install
+npm run dev
