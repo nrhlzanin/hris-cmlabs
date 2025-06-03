@@ -1,3 +1,4 @@
+//baru tapi ga naik
 import React from "react";
 
 export default function ProfilePage() {
@@ -112,5 +113,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-//
