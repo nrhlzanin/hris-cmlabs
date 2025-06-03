@@ -2,22 +2,12 @@
 
 export default function AbsensiForm() {
   return (
-    <main className="bg-gray-100 min-h-screen p-6">
-      <div className="bg-white p-6 rounded shadow-lg max-w-5xl mx-auto">
+    <div className="p-6 overflow-auto min-h-screen bg-gray-100">
+      <div className="bg-white p-6 rounded shadow-lg max-w-6xl mx-auto">
         <h2 className="text-2xl font-semibold mb-4">Add Checkbox</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
           {/* Kolom Kiri */}
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium">Select Employees</label>
-              <select className="mt-1 w-full border rounded px-3 py-2">
-                <option>Choose Employee</option>
-                <option>John Doe</option>
-                <option>Jane Smith</option>
-              </select>
-            </div>
-
             <div>
               <label className="block text-sm font-medium">Absent Type</label>
               <select className="mt-1 w-full border rounded px-3 py-2">
@@ -48,7 +38,9 @@ export default function AbsensiForm() {
                 <p className="my-2">Or</p>
                 <button className="text-blue-600 underline">Browse</button>
               </div>
-              <button className="mt-3 w-full bg-gray-200 py-2 rounded text-gray-600" disabled>Upload Now</button>
+              <button className="mt-3 w-full bg-gray-200 py-2 rounded text-gray-600" disabled>
+                Upload Now
+              </button>
             </div>
           </div>
 
@@ -62,7 +54,11 @@ export default function AbsensiForm() {
             </div>
 
             <div className="rounded overflow-hidden shadow">
-              <img></img>
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Malang_Satellite_Image.png"
+                alt="Map"
+                className="w-full h-52 object-cover"
+              />
             </div>
 
             <div className="space-y-4">
@@ -71,7 +67,7 @@ export default function AbsensiForm() {
                 <input
                   type="text"
                   className="w-full border rounded px-3 py-2 mt-1"
-                  value="Malang City, East Java"
+                  defaultValue="Malang City, East Java"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -102,6 +98,8 @@ export default function AbsensiForm() {
           <button className="px-4 py-2 bg-black text-white rounded">Save</button>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
+
+//
