@@ -1,4 +1,5 @@
 ﻿import React from 'react';
+import Link from 'next/link'; // <-- tambahkan ini
 
 export default function EmployeeTable() {
   const employees = Array.from({ length: 10 }, (_, i) => ({
@@ -18,12 +19,16 @@ export default function EmployeeTable() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">All Employees Information</h2>
           <div className="flex space-x-2">
-            <input type="text" placeholder="Search Employee" className="px-3 py-2 border rounded-md focus:ring focus:border-blue-300" />
-            <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Filter</button>
-            <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Import</button>
-            <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Export</button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">+ Add Data</button>
-          </div>
+  <input type="text" placeholder="Search Employee" className="px-3 py-2 border rounded-md focus:ring focus:border-blue-300" />
+  <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Filter</button>
+  <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Import</button>
+  <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Export</button>
+  
+  {/* Ini yang dimodifikasi */}
+  <Link href="new-employee/">
+    <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">+ Add Data</button>
+  </Link>
+</div>
         </div>
 
         <div className="overflow-x-auto">
