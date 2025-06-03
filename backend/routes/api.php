@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\CheckClockController;
 use App\Http\Controllers\Api\CheckClockSettingController;
 use App\Http\Controllers\Api\CheckClockSettingTimeController;
+use App\Http\Controllers\Api\LetterFormatController;
+use App\Http\Controllers\Api\LetterController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -48,4 +50,15 @@ Route::middleware('auth:sanctum')->group(function () {
     
     // Check Clock Setting Times (Admin/SuperAdmin only)
     Route::apiResource('check-clock-settings.times', CheckClockSettingTimeController::class);
+    
+    // Letter Format routes (Admin/SuperAdmin only)
+    Route::apiResource('letter-formats', LetterFormatController::class);
+    Route::post('/letter-formats/{id}/toggle-status', [LetterFormatController::class, 'toggleStatus']);
+    Route::get('/letter-formats/{id}/download', [LetterFormatController::class, 'download']);
+    
+    // Letter routes (All authenticated users can view, Admin can CRUD)
+    Route::apiResource('letters', LetterController::class);
+    Route::get('/letters/employee/{employeeName}', [LetterController::class, 'getByEmployee']);
+    Route::post('/letters/generate-for-employee', [LetterController::class, 'generateForEmployee']);
+    Route::get('/available-letter-formats', [LetterController::class, 'getAvailableFormats']);
 });
