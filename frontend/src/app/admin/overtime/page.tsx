@@ -135,7 +135,7 @@ export default function OvertimeOverview() {
 
       {/* Modal Table Popup */}
       {modalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-3xl max-h-[90%] overflow-y-auto relative">
             <button
               onClick={() => setModalOpen(false)}
