@@ -1,8 +1,9 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { RiSearchLine } from "react-icons/ri";
+import { RiSearchLine, RiBellLine } from "react-icons/ri";
 import { NavUser } from "@/components/nav-user";
+import { Button } from "@/components/ui/button";
 
 export function AdminNavbar() {
   const pathname = usePathname();
@@ -34,8 +35,22 @@ export function AdminNavbar() {
         </div>
       </div>
 
-      {/* Right: User Profile */}
-      <div className="ml-auto">
+      {/* Right: Notification & Profile */}
+      <div className="flex items-center gap-4">
+        {/* Notification Bell */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+        >
+          <RiBellLine className="h-5 w-5" />
+          {/* Notification Badge */}
+          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-[10px] font-medium text-white flex items-center justify-center">
+            3
+          </span>
+        </Button>
+
+        {/* User Profile */}
         <NavUser
           user={{
             name: "Admin User",

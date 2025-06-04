@@ -1,6 +1,7 @@
 "use client"
-
+import { useSidebar } from "@/components/ui/sidebar"
 import * as React from "react"
+import Image from "next/image"
 import {
   LayoutDashboard,
   Users,
@@ -51,11 +52,20 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const { state } = useSidebar()
+  
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <div className="p-4 text-xl font-bold">
-          {data.title}
+        <div className="p-4 flex items-center justify-center">
+          <Image
+            src="/img/logo/Logo HRIS-1.png"  // Always use Vector HRIS.png
+            alt="HRIS Logo"
+            width={40}
+            height={40}
+            className="transition-all duration-300 object-contain w-auto h-auto"
+            priority
+          />
         </div>
       </SidebarHeader>
       <SidebarContent>
