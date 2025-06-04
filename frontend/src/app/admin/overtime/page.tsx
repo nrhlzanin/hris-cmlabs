@@ -78,62 +78,64 @@ export default function OvertimeOverview() {
   );
 
   return (
-    <div className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold mr-4">Overtime Overview</h1>
-        <input
-          type="text"
-          placeholder="Search Employee"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border border-gray-300 rounded px-3 py-2 w-64 mr-2"
-        />
-        <button className="border border-gray-300 rounded px-4 py-2 mr-2">Filter</button>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Data</button>
-      </div>
+    <div className="min-h-screen bg-gray-100 py-10 px-4">
+      <div className="max-w-7xl mx-auto bg-white rounded-lg shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-semibold mr-4">Overtime Overview</h1>
+          <input
+            type="text"
+            placeholder="Search Employee"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="border border-gray-300 rounded px-3 py-2 w-64 mr-2"
+          />
+          <button className="border border-gray-300 rounded px-4 py-2 mr-2">Filter</button>
+          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Data</button>
+        </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full table-auto border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="border px-4 py-2 text-left">Employee Name</th>
-              <th className="border px-4 py-2 text-left">Position</th>
-              <th className="border px-4 py-2 text-left">Branch</th>
-              <th className="border px-4 py-2 text-left">Grade</th>
-              <th className="border px-4 py-2 text-left">Status</th>
-              <th className="border px-4 py-2 text-left">Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredEmployees.map((emp, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                <td className="border px-4 py-2 flex items-center gap-2">
-                  <div className="bg-gray-300 w-8 h-8 rounded-full" />
-                  {emp.name}
-                </td>
-                <td className="border px-4 py-2">{emp.position}</td>
-                <td className="border px-4 py-2">{emp.branch}</td>
-                <td className="border px-4 py-2">{emp.grade}</td>
-                <td className="border px-4 py-2">
-                  <span className={`px-2 py-1 rounded-full text-sm ${statusColor[emp.status]}`}>
-                    {emp.status}
-                  </span>
-                </td>
-                <td className="border px-4 py-2">
-                  <button
-                    onClick={() => setModalOpen(true)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                  >
-                    View
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full table-auto border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border px-4 py-2 text-left">Employee Name</th>
+                <th className="border px-4 py-2 text-left">Position</th>
+                <th className="border px-4 py-2 text-left">Branch</th>
+                <th className="border px-4 py-2 text-left">Grade</th>
+                <th className="border px-4 py-2 text-left">Status</th>
+                <th className="border px-4 py-2 text-left">Details</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredEmployees.map((emp, index) => (
+                <tr key={index} className="hover:bg-gray-50">
+                  <td className="border px-4 py-2 flex items-center gap-2">
+                    <div className="bg-gray-300 w-8 h-8 rounded-full" />
+                    {emp.name}
+                  </td>
+                  <td className="border px-4 py-2">{emp.position}</td>
+                  <td className="border px-4 py-2">{emp.branch}</td>
+                  <td className="border px-4 py-2">{emp.grade}</td>
+                  <td className="border px-4 py-2">
+                    <span className={`px-2 py-1 rounded-full text-sm ${statusColor[emp.status]}`}>
+                      {emp.status}
+                    </span>
+                  </td>
+                  <td className="border px-4 py-2">
+                    <button
+                      onClick={() => setModalOpen(true)}
+                      className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+                    >
+                      View
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Modal Table Popup */}
+      {/* Modal Popup */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-3xl max-h-[90%] overflow-y-auto relative">
