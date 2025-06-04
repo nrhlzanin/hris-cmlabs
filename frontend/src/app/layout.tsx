@@ -2,8 +2,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../styles/globals.css";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,13 +24,7 @@ export default function RootLayout({
         {/* Kalau kamu butuh menambahkan tag <link> lain, letakkan di app/head.tsx */}
       </head>
       <body className={`${inter.variable} antialiased`}>
-        <SidebarProvider>
-          <AppSidebar />
-          <main>
-            <SidebarTrigger />
-            {children}
-          </main>
-        </SidebarProvider>
+        {children}
       </body>
     </html>
   );
