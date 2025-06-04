@@ -1,19 +1,60 @@
-﻿import React, { useState } from "react";
+﻿'use client';
+import React, { useState } from "react";
+import Link from "next/link";
+
+const dummyData = [
+  {
+    id: 1,
+    name: "Juanita",
+    position: "CEO",
+    clockIn: "08.00",
+    clockOut: "18.30",
+    workHours: "10h 30m",
+    approved: null,
+  },
+  // nanti bisa tambah data lain
+];
 
 export default function AttendanceOverview() {
+  const [attendanceList, setAttendanceList] = useState(dummyData);
   const [isApprovalOpen, setApprovalOpen] = useState(false);
   const [isDetailsOpen, setDetailsOpen] = useState(false);
-  const [approved, setApproved] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
 
+  // buka modal approve dengan pilih row
+  const openApprovalModal = (id) => {
+    setSelectedId(id);
+    setApprovalOpen(true);
+  };
+
+  // buka modal details dengan pilih row
+  const openDetailsModal = (id) => {
+    setSelectedId(id);
+    setDetailsOpen(true);
+  };
+
+  // approve attendance by id
   const handleApprove = () => {
-    setApproved(true);
+    setAttendanceList((prev) =>
+      prev.map((item) =>
+        item.id === selectedId ? { ...item, approved: true } : item
+      )
+    );
     setApprovalOpen(false);
   };
 
+  // reject attendance by id
   const handleReject = () => {
-    setApproved(false);
+    setAttendanceList((prev) =>
+      prev.map((item) =>
+        item.id === selectedId ? { ...item, approved: false } : item
+      )
+    );
     setApprovalOpen(false);
   };
+
+  // cari data yg dipilih untuk details modal
+  const selectedData = attendanceList.find((item) => item.id === selectedId);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -22,7 +63,11 @@ export default function AttendanceOverview() {
           <h2 className="text-2xl font-semibold">Checklock Overview</h2>
           <div className="flex gap-2">
             <button className="border px-4 py-2 rounded">Filter</button>
-            <button className="bg-blue-500 text-white px-4 py-2 rounded">+ Add Data</button>
+            <Link href="absensi/">
+              <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                + Add Data
+              </button>
+            </Link>
           </div>
         </div>
 
@@ -46,50 +91,74 @@ export default function AttendanceOverview() {
             </tr>
           </thead>
           <tbody className="divide-y">
-            <tr>
-              <td className="px-4 py-2">Juanita</td>
-              <td className="px-4 py-2">CEO</td>
-              <td className="px-4 py-2">08.00</td>
-              <td className="px-4 py-2">18.30</td>
-              <td className="px-4 py-2">10h 30m</td>
-              <td className="px-4 py-2">
-                <button onClick={() => setApprovalOpen(true)} className="flex items-center gap-2">
-                  {!approved ? (
-                    <img src="/icons/cross.svg" alt="no" className="w-5 h-5" />
-                  ) : (
-                    <img src="/icons/check.svg" alt="yes" className="w-5 h-5" />
-                  )}
-                </button>
-              </td>
-              <td className="px-4 py-2">
-                <span
-                  className={`px-2 py-1 rounded text-xs ${
-                    approved === null
-                      ? "bg-yellow-200 text-yellow-800"
-                      : approved
-                      ? "bg-green-200 text-green-800"
-                      : "bg-red-200 text-red-800"
-                  }`}
-                >
-                  {approved === null ? "Waiting Approval" : approved ? "On Time" : "Late"}
-                </span>
-              </td>
-              <td className="px-4 py-2">
-                <button
-                  onClick={() => setDetailsOpen(true)}
-                  className="bg-blue-500 text-white px-3 py-1 rounded text-xs"
-                >
-                  View
-                </button>
-              </td>
-            </tr>
+            {attendanceList.map((item) => (
+              <tr key={item.id}>
+                <td className="px-4 py-2">{item.name}</td>
+                <td className="px-4 py-2">{item.position}</td>
+                <td className="px-4 py-2">{item.clockIn}</td>
+                <td className="px-4 py-2">{item.clockOut}</td>
+                <td className="px-4 py-2">{item.workHours}</td>
+                <td className="px-4 py-2">
+                  <button
+                    onClick={() => openApprovalModal(item.id)}
+                    className="flex items-center gap-2"
+                    aria-label="Approve attendance"
+                  >
+                    {item.approved === null ? (
+                      <img
+                        src="/icons/cross.svg"
+                        alt="not approved"
+                        className="w-5 h-5"
+                      />
+                    ) : item.approved ? (
+                      <img
+                        src="/icons/check.svg"
+                        alt="approved"
+                        className="w-5 h-5"
+                      />
+                    ) : (
+                      <img
+                        src="/icons/cross.svg"
+                        alt="rejected"
+                        className="w-5 h-5"
+                      />
+                    )}
+                  </button>
+                </td>
+                <td className="px-4 py-2">
+                  <span
+                    className={`px-2 py-1 rounded text-xs ${
+                      item.approved === null
+                        ? "bg-yellow-200 text-yellow-800"
+                        : item.approved
+                        ? "bg-green-200 text-green-800"
+                        : "bg-red-200 text-red-800"
+                    }`}
+                  >
+                    {item.approved === null
+                      ? "Waiting Approval"
+                      : item.approved
+                      ? "On Time"
+                      : "Late"}
+                  </span>
+                </td>
+                <td className="px-4 py-2">
+                  <button
+                    onClick={() => openDetailsModal(item.id)}
+                    className="bg-blue-500 text-white px-3 py-1 rounded text-xs"
+                  >
+                    View
+                  </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
       {/* Approval Modal */}
-      {isApprovalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      {isApprovalOpen && selectedData && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-start">
               <div className="flex gap-3">
@@ -97,12 +166,18 @@ export default function AttendanceOverview() {
                 <div>
                   <h2 className="text-lg font-semibold">Approve Attendance</h2>
                   <p className="text-sm text-gray-600">
-                    Are you sure want to approve this employee's attendance?<br />
+                    Are you sure want to approve {selectedData.name}'s
+                    attendance?
+                    <br />
                     This action cannot be undone.
                   </p>
                 </div>
               </div>
-              <button onClick={() => setApprovalOpen(false)} className="text-gray-600 hover:text-black text-xl font-bold">
+              <button
+                onClick={() => setApprovalOpen(false)}
+                className="text-gray-600 hover:text-black text-xl font-bold"
+                aria-label="Close modal"
+              >
                 &times;
               </button>
             </div>
@@ -125,14 +200,15 @@ export default function AttendanceOverview() {
       )}
 
       {/* Details Modal */}
-      {isDetailsOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      {isDetailsOpen && selectedData && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Attendance Details</h2>
               <button
                 onClick={() => setDetailsOpen(false)}
                 className="text-gray-600 hover:text-black text-2xl font-bold"
+                aria-label="Close modal"
               >
                 &times;
               </button>
@@ -143,11 +219,25 @@ export default function AttendanceOverview() {
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-800 rounded-full"></div>
                 <div>
-                  <div className="font-semibold">Nama Lengkap</div>
-                  <div className="text-sm text-gray-600">Jabatan</div>
+                  <div className="font-semibold">{selectedData.name}</div>
+                  <div className="text-sm text-gray-600">{selectedData.position}</div>
                 </div>
               </div>
-              <span className="bg-gray-200 text-gray-700 text-xs px-3 py-1 rounded">Status Approve</span>
+              <span
+                className={`px-3 py-1 rounded text-xs ${
+                  selectedData.approved === null
+                    ? "bg-yellow-200 text-yellow-800"
+                    : selectedData.approved
+                    ? "bg-green-200 text-green-800"
+                    : "bg-red-200 text-red-800"
+                }`}
+              >
+                {selectedData.approved === null
+                  ? "Waiting Approval"
+                  : selectedData.approved
+                  ? "On Time"
+                  : "Late"}
+              </span>
             </div>
 
             {/* Info */}
@@ -158,19 +248,25 @@ export default function AttendanceOverview() {
               </div>
               <div>
                 <p className="text-sm text-gray-500">Check In</p>
-                <p className="font-semibold">09.00</p>
+                <p className="font-semibold">{selectedData.clockIn}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Check Out</p>
-                <p className="font-semibold">15.00</p>
+                <p className="font-semibold">{selectedData.clockOut}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Status</p>
-                <p className="font-semibold">Present</p>
+                <p className="font-semibold">
+                  {selectedData.approved === null
+                    ? "Pending"
+                    : selectedData.approved
+                    ? "Present"
+                    : "Absent"}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Work Hours</p>
-                <p className="font-semibold">9 Hours</p>
+                <p className="font-semibold">{selectedData.workHours}</p>
               </div>
             </div>
 
@@ -181,7 +277,8 @@ export default function AttendanceOverview() {
                 <strong>Location:</strong> Office
               </p>
               <p>
-                <strong>Detail Address:</strong> Jln. Soekarno Hatta No. 8, Jatimulyo, Lowokwaru, Kota Malang.
+                <strong>Detail Address:</strong> Jln. Soekarno Hatta No. 8, Jatimulyo,
+                Lowokwaru, Kota Malang.
               </p>
               <p>
                 <strong>Lat:</strong> -2241720016
@@ -196,7 +293,9 @@ export default function AttendanceOverview() {
               <h3 className="font-semibold mb-2">Proof of Attendance</h3>
               <div className="flex items-center gap-2">
                 <span>Wa003198373738.img</span>
-                <button className="text-blue-600 hover:underline text-sm">Download</button>
+                <button className="text-blue-600 hover:underline text-sm">
+                  Download
+                </button>
               </div>
             </div>
           </div>

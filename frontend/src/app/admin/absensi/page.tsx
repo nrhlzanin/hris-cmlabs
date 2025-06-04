@@ -1,4 +1,5 @@
-﻿import React from "react";
+'use client';
+import React from "react";
 import { AdminNavbar } from "@/components/admin/AdminNavbar";
 
 export default function AddCheckboxPage() {
