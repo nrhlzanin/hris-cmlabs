@@ -72,6 +72,7 @@ const detailData = [
 export default function OvertimeOverview() {
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [formModalOpen, setFormModalOpen] = useState(false);
 
   const filteredEmployees = employees.filter((emp) =>
     emp.name.toLowerCase().includes(search.toLowerCase())
@@ -90,7 +91,12 @@ export default function OvertimeOverview() {
             className="border border-gray-300 rounded px-3 py-2 w-64 mr-2"
           />
           <button className="border border-gray-300 rounded px-4 py-2 mr-2">Filter</button>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Add Data</button>
+          <button
+            onClick={() => setFormModalOpen(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Add Data
+          </button>
         </div>
 
         <div className="overflow-x-auto">
@@ -135,7 +141,7 @@ export default function OvertimeOverview() {
         </div>
       </div>
 
-      {/* Modal Popup */}
+      {/* Detail Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-3xl max-h-[90%] overflow-y-auto relative">
@@ -166,6 +172,66 @@ export default function OvertimeOverview() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Form Modal */}
+      {formModalOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-[90%] max-w-md overflow-y-auto relative">
+            <button
+              onClick={() => setFormModalOpen(false)}
+              className="absolute top-2 right-4 text-red-600 text-2xl font-bold"
+            >
+              ×
+            </button>
+            <h2 className="text-lg font-semibold mb-4">Overtime Form</h2>
+            <form className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Date</label>
+                <input
+                  type="date"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">End Time</label>
+                <input
+                  type="time"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  Upload Supporting Evidence
+                </label>
+                <div className="border-dashed border-2 border-gray-300 p-4 text-center rounded-md">
+                  <p className="text-gray-500 mb-2">Drag and Drop Here</p>
+                  <p className="text-blue-600 font-semibold cursor-pointer">Or Browse</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Finish or Not?</label>
+                <input
+                  type="text"
+                  placeholder="Enter Content For The Letter Type"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                />
+              </div>
+
+              <div className="text-center">
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
+                >
+                  Submit
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
