@@ -1,7 +1,37 @@
-﻿import Image from 'next/image';
+﻿'use client';
+
+import { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default function ChecklockOverview() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const [sendTime, setSendTime] = useState('');
+
+  const openModal = () => {
+    const now = new Date();
+    const formattedTime = now.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    });
+    setSendTime(formattedTime);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setReason('');
+    setIsModalOpen(false);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Kirim reason & sendTime ke backend di sini
+    console.log({ reason, sendTime });
+    closeModal();
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="bg-white rounded-lg shadow p-4">
@@ -15,7 +45,7 @@ export default function ChecklockOverview() {
             />
             <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Filter</button>
             <Link href="absensi/">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">+ Add Data</button>
+              <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">+ Add Data</button>
             </Link>
           </div>
         </div>
@@ -29,6 +59,7 @@ export default function ChecklockOverview() {
                 <th className="p-2">Clock Out</th>
                 <th className="p-2">Work Hours</th>
                 <th className="p-2 text-center">Status</th>
+                <th className="p-2 text-center">Overtime</th>
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -42,6 +73,14 @@ export default function ChecklockOverview() {
                     On Time
                   </span>
                 </td>
+                <td className="p-2 text-center">
+                  <button
+                    onClick={openModal}
+                    className="px-2 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                  >
+                    +
+                  </button>
+                </td>
               </tr>
               <tr>
                 <td className="p-2">March 02, 2025</td>
@@ -52,6 +91,14 @@ export default function ChecklockOverview() {
                   <span className="bg-red-600 text-white px-2 py-1 rounded-full text-xs">
                     Late
                   </span>
+                </td>
+                <td className="p-2 text-center">
+                  <button
+                    onClick={openModal}
+                    className="px-2 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                  >
+                    +
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -73,7 +120,53 @@ export default function ChecklockOverview() {
           </div>
         </div>
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
+            <h3 className="text-lg font-semibold mb-4">Overtime Form</h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-sm text-gray-700 block mb-1">Date</label>
+                <p className="text-gray-800">{new Date().toLocaleDateString('en-US', {
+                  year: 'numeric', month: 'long', day: '2-digit'
+                })}</p>
+              </div>
+              <div>
+                <label className="text-sm text-gray-700 block mb-1">Reason</label>
+                <input
+                  type="text"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md focus:ring focus:border-blue-300"
+                  placeholder="Enter Content For The Letter Type"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-sm text-gray-700 block mb-1">Time Sending</label>
+                <p className="text-gray-800">{sendTime}</p>
+              </div>
+              <div className="flex justify-end space-x-2 pt-4 border-t">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-800 text-white rounded hover:bg-blue-900"
+                >
+                  Submit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-//
