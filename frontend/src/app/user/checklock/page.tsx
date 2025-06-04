@@ -123,7 +123,7 @@ export default function ChecklockOverview() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
             <h3 className="text-lg font-semibold mb-4">Overtime Form</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
