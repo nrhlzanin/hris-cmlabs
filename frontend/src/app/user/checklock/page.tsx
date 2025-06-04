@@ -1,4 +1,5 @@
 ﻿import Image from 'next/image';
+import Link from 'next/link';
 
 export default function ChecklockOverview() {
   return (
@@ -13,9 +14,9 @@ export default function ChecklockOverview() {
               className="px-3 py-2 border rounded-md focus:ring focus:border-blue-300"
             />
             <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Filter</button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-              + Add Data
-            </button>
+            <Link href="absensi/">
+            <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">+ Add Data</button>
+            </Link>
           </div>
         </div>
 
