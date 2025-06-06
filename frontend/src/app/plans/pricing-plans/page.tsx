@@ -124,7 +124,7 @@ export default function PricingPage() {
               <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Select Seat</button>
             </div>
 
-            <div className="bg-gradient-to-l from-[#7CA5BF] to-[#3A4D59] text-white rounded-xl shadow-lg p-8">
+            <div className="bg-[#2E2E3A] text-white rounded-xl shadow-lg p-8">
               <h3 className="text-2xl font-semibold text-left">Premium Seat</h3>
               <p className="text-4xl font-bold text-left">$10 <span className="text-lg">/seat</span></p>
               <hr className="border-t-2 border-white my-4" />
@@ -136,7 +136,7 @@ export default function PricingPage() {
               <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Select Seat</button>
             </div>
 
-            <div className="bg-[#2E2E3A] text-white rounded-xl shadow-lg p-8">
+            <div className="bg-gradient-to-l from-[#7CA5BF] to-[#3A4D59] text-white rounded-xl shadow-lg p-8">
               <h3 className="text-2xl font-semibold text-left">Enterprise Seat</h3>
               <p className="text-4xl font-bold text-left">$15 <span className="text-lg">/seat</span></p>
               <hr className="border-t-2 border-white my-4" />
