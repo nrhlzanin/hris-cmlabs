@@ -1,11 +1,20 @@
-﻿// src/app/check-email/page.tsx
+﻿"use client";
 
-"use client";
-
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { FaArrowLeft } from "react-icons/fa";
 
 export default function CheckYourEmailPage() {
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const emailFromUrl = new URLSearchParams(window.location.search).get("email");
+    if (emailFromUrl) {
+      setEmail(emailFromUrl);
+    }
+  }, []);
+
   return (
     <div className="flex flex-col md:flex-row-reverse h-screen w-screen overflow-hidden font-inter">
       {/* Right Image Section */}
@@ -19,7 +28,7 @@ export default function CheckYourEmailPage() {
       </div>
 
       {/* Left Info Section */}
-      <div className="w-full md:w-1/2 h-full overflow-y-auto p-10 flex flex-col justify-center bg-white">
+      <div className="w-full md:w-1/2 h-full overflow-y-auto p-6 md:p-10 flex flex-col justify-center bg-white">
         {/* Icon */}
         <div className="flex justify-center mb-6">
           <svg
@@ -53,26 +62,33 @@ export default function CheckYourEmailPage() {
         </div>
 
         <div className="text-center mb-8">
-          <h1 className="text-3xl text-black font-bold mb-2">Check your email</h1>
-          <p className="text-black">
+          <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 mb-4">
+            Check your email
+          </h1>
+          <p className="text-gray-700 sm:text-lg max-w-md mx-auto mb-6">
             We sent a password reset link to your email (
-            <strong>uremail@gmail.com</strong>) which is valid for 24 hours.
-            Please check your inbox!
+            <strong>{email || "your-email@example.com"}</strong>) which is valid
+            for 24 hours. Please check your inbox!
           </p>
         </div>
 
-        <Link href="set-new-password\">
+        {/* Button to Open Gmail */}
+        <Link href="../auth/set-new-password">
           <button
             type="button"
-            className="w-full bg-[#FFD566] hover:bg-[#FFAB00] text-black font-bold py-2 rounded"
+            className="w-full bg-yellow-500 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-lg hover:bg-yellow-400 transition-all duration-300"
           >
             Open Gmail
           </button>
         </Link>
 
         <p className="text-center text-sm mt-4">
-          <Link href="sign-in\" className="text-blue-600 hover:underline">
-            ← Back to log in
+          <Link
+            href="../auth/sign-in"
+            className="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-all duration-300"
+          >
+            <FaArrowLeft className="mr-2" />
+            Back to log in
           </Link>
         </p>
       </div>
