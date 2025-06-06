@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../styles/globals.css";
+import 'font-awesome/css/font-awesome.min.css';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -21,7 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Kalau kamu butuh menambahkan tag <link> lain, letakkan di app/head.tsx */}
+        <link
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+          rel="stylesheet"
+        />
       </head>
       <body className={`${inter.variable} antialiased`}>
         {children}

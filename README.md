@@ -14,9 +14,11 @@ composer install
 cp .env.example .env
 php artisan key:generate
 php artisan serve
+```
 
 ### Frontend (Next.js)
 ```bash
 cd frontend
 npm install
 npm run dev
+```
