@@ -1,13 +1,42 @@
-﻿// src/app/link-expired/page.tsx
-
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function LinkExpiredPage() {
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  // Simulating a 5-minute expiry from the time the link is created.
+  useEffect(() => {
+    const expiryTime = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const expiryTimestamp = new Date().getTime() - expiryTime;
+    const timer = setInterval(() => {
+      const elapsed = new Date().getTime() - expiryTimestamp;
+      setTimeLeft(Math.max(0, (expiryTime - elapsed) / 1000));
+    }, 1000);
+
+    return () => clearInterval(timer); // Cleanup on unmount
+  }, []);
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
   return (
-    <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden font-inter">
+    <div className="flex flex-col md:flex-row-reverse h-screen w-screen overflow-hidden font-inter">
+      {/* Right Image */}
+      <div className="w-full md:w-1/2 h-full relative">
+        <Image
+          src="/img/Check Email.png"
+          alt="HRIS Illustration"
+          fill
+          className="object-cover"
+        />
+      </div>
+
       {/* Left Content */}
       <div className="w-full md:w-1/2 h-full overflow-y-auto p-10 flex flex-col justify-center bg-white">
         {/* Icon */}
@@ -37,33 +66,32 @@ export default function LinkExpiredPage() {
         </div>
 
         {/* Text */}
-        <div className="text-center text-black mb-8">
-          <h1 className="text-3xl font-bold mb-2">Link Expired</h1>
-          <p className="text-black">
+        <div className="text-center mb-8 text-black">
+          <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 mb-4">
+            Link Expired
+          </h1>
+          <p className="text-black text-lg sm:text-xl max-w-md mx-auto mb-6">
             The password reset link has expired. Please request a new link to reset your password.
           </p>
+          {timeLeft > 0 && (
+            <p className="text-sm text-red-600">
+              This link expired in: {formatTime(timeLeft)}
+            </p>
+          )}
         </div>
 
         {/* Button */}
-        <Link href="sign-in\" className="block w-full">
+        <Link href="../auth/sign-in" className="block w-full">
           <button
             type="button"
-            className="w-full bg-[#FFD566] hover:bg-[#FFAB00] text-white font-bold py-2 rounded transition-all duration-300 ease-in-out transform hover:scale-105"
+            className="w-full bg-yellow-500 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-lg hover:bg-yellow-400 transition-all duration-300"
           >
             Back to Login
           </button>
         </Link>
       </div>
 
-      {/* Right Image */}
-      <div className="w-full md:w-1/2 h-full relative">
-        <Image
-          src="/img/Check Email.png"
-          alt="HRIS Illustration"
-          fill
-          className="object-cover"
-        />
-      </div>
+
     </div>
   );
 }

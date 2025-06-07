@@ -1,18 +1,28 @@
-﻿// src/app/auth/sign-in/page.tsx
-
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import SignInForm from "../../components/auth/signinform";
 
 export default function SignInPage() {
+    const [isMounted, setIsMounted] = useState(false);
+  
+    useEffect(() => {
+      setIsMounted(true);
+    }, []);
+  
+    if (!isMounted) {
+      return null;
+    }
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-inter">
+    <div className="flex flex-col md:flex-row h-screen w-screen overflow-hidden font-inter">
       {/* Left image section */}
-      <div className="w-1/2 h-full relative">
+      <div className="w-full md:w-1/2 h-64 md:h-full relative">
         <Link
           href="/"
-          className="absolute top-4 left-4 bg-[#2D8EFF] text-white px-4 py-2 rounded-full shadow-lg hover:bg-[#1E3A5F] flex items-center justify-center z-10"
+          className="absolute top-4 left-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white px-4 py-2 rounded-full shadow-lg hover:from-blue-700 hover:to-blue-500 hover:scale-105 transition-all duration-300 flex items-center justify-center z-10"
         >
           <span className="text-xl">&#8592;</span>
         </Link>
@@ -25,11 +35,11 @@ export default function SignInPage() {
       </div>
 
       {/* Right form section */}
-      <div className="w-1/2 h-full overflow-y-auto flex items-center justify-center p-10 bg-white">
+      <div className="w-full md:w-1/2 h-full overflow-y-auto flex items-center justify-center p-6 md:p-10 bg-white">
         <div className="w-full max-w-md">
           <div className="flex justify-between items-center mb-6">
             <Image src="/img/logo/Logo HRIS-1.png" alt="HRIS Logo" width={100} height={32} />
-            <Link href="sign-up/" className="text-[#2D8EFF] font-semibold hover:underline">
+            <Link href="../auth/sign-up" className="text-blue-500 font-semibold hover:underline">
               Try for free!
             </Link>
           </div>
@@ -39,73 +49,32 @@ export default function SignInPage() {
             Welcome back to HRIS cmlabs! Manage everything with ease.
           </p>
 
-          <form className="space-y-5 text-black">
-            <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="email">
-                Email or Phone Number
-              </label>
-              <input
-                type="email"
-                id="email"
-                placeholder="Enter your email"
-                className="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
+          <SignInForm />
+
+          <button
+            type="button"
+            className="w-full bg-gradient-to-r from-gray-800 to-gray-600 hover:from-blue-300 hover:to-blue-500 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-xl border-2 border-transparent hover:border-blue-500 transition-all duration-300 flex items-center justify-center gap-2 mt-4"
+          >
+            <Image
+              src="https://www.svgrepo.com/show/475656/google-color.svg"
+              alt="Google"
+              width={20}
+              height={20}
+            />
+            Sign in with Google
+          </button>
+
+          <Link href="../auth/sign-in-id">
+            <div className="w-full bg-gradient-to-r from-gray-800 to-gray-600 hover:from-blue-300 hover:to-blue-500 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-xl border-2 border-transparent hover:border-blue-500 transition-all duration-300 flex items-center justify-center gap-2 mt-4">
+              Sign in with Employee ID
             </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1" htmlFor="password">
-                Password
-              </label>
-              <input
-                type="password"
-                id="password"
-                placeholder="Enter your password"
-                className="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
-            </div>
-
-            <div className="flex items-center text-sm justify-between">
-              <label className="flex items-center">
-                <input type="checkbox" className="mr-2" /> Remember Me
-              </label>
-              <Link href="forgot-password\" className="text-dodgerblue font-semibold hover:underline">
-                Forgot Password?
-              </Link>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-[#2D8EFF] hover:bg-[#1E3A5F] text-white font-bold py-2 rounded"
-            >
-              SIGN IN
-            </button>
-
-            <button
-              type="button"
-              className="w-full bg-[#595959] hover:bg-[#2D8EFF] text-white font-bold py-2 rounded flex items-center justify-center gap-2"
-            >
-              <Image
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt="Google"
-                width={20}
-                height={20}
-              />
-              Sign in with Google
-            </button>
-
-            <Link href="sign-in-id/">
-              <div className="w-full bg-[#595959] hover:bg-[#2D8EFF] text-white font-bold py-2 rounded text-center mt-2">
-                Sign in with Employee ID
-              </div>
+          </Link>
+          <p className="text-center text-sm mt-4">
+            Don’t have an account yet?{' '}
+            <Link href="../auth/sign-up" className="text-blue-500 hover:underline">
+              Sign up now and get started
             </Link>
-
-            <p className="text-center text-sm mt-4">
-              Don’t have an account yet?{' '}
-              <Link href="sign-up/" className="text-[#2D8EFF] hover:underline">
-                Sign up now and get started
-              </Link>
-            </p>
-          </form>
+          </p>
         </div>
       </div>
     </div>

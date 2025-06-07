@@ -1,6 +1,4 @@
-﻿// src/app/password-updated/page.tsx
-
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -19,7 +17,7 @@ export default function PasswordUpdatedPage() {
       </div>
 
       {/* Left Content Section */}
-      <div className="w-full md:w-1/2 h-full overflow-y-auto p-10 flex flex-col justify-center bg-white">
+      <div className="w-full md:w-1/2 h-full overflow-y-auto p-6 md:p-10 flex flex-col justify-center bg-white">
         {/* Icon */}
         <div className="flex justify-center mb-6">
           <svg
@@ -40,19 +38,19 @@ export default function PasswordUpdatedPage() {
 
         {/* Title and Text */}
         <div className="text-center mb-8 text-black">
-          <h1 className="text-3xl font-bold mb-2">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">
             Your password has been successfully reset
           </h1>
-          <p className="text-black">
+          <p className="text-gray-700 sm:text-lg md:text-xl">
             You can log in with your new password. If you encounter any issues,
             please contact support!
           </p>
         </div>
 
-        <Link href="sign-in\">
+        <Link href="../auth/sign-in">
           <button
             type="button"
-            className="w-full bg-[#5AA877] hover:bg-[#257047] text-white font-bold py-2 rounded"
+            className="w-full bg-green-700 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-lg hover:bg-green-600 transition-all duration-300"
           >
             Login Now
           </button>
