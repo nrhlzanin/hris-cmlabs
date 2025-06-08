@@ -1,152 +1,221 @@
-﻿'use client';
+﻿"use client";
 
-import { useEffect } from 'react';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { PACKAGE_PLANS, SEAT_PLANS } from "../config";
+import { Plan, SeatPlan } from "../types";
 
 export default function PricingPage() {
-  useEffect(() => {
-    const packageRadio = document.getElementById('package') as HTMLInputElement;
-    const seatRadio = document.getElementById('seat') as HTMLInputElement;
-    const packageLabel = document.getElementById('packageLabel')!;
-    const seatLabel = document.getElementById('seatLabel')!;
-    const slidingBg = document.getElementById('slidingBg')!;
-    const packageCards = document.getElementById('packageCards')!;
-    const seatCards = document.getElementById('seatCards')!;
+  const [currentPlanType, setCurrentPlanType] = useState<"package" | "seat">(
+    "package"
+  );
 
-    function updateToggle() {
-      if (seatRadio.checked) {
-        slidingBg.style.transform = 'translateX(100%)';
-        packageLabel.classList.remove('text-white');
-        packageLabel.classList.add('text-gray-700');
-        seatLabel.classList.remove('text-gray-700');
-        seatLabel.classList.add('text-white');
+  const handleToggleChange = (type: "package" | "seat") => {
+    setCurrentPlanType(type);
+  };
+  const handlePlanSelect = (
+    plan: Plan | SeatPlan,
+    planType: "package" | "seat"
+  ) => {
+    const planData = {
+      id: plan.id,
+      name: plan.name,
+      type: planType,
+      price:
+        planType === "package"
+          ? (plan as Plan).price
+          : { seat: (plan as SeatPlan).pricePerSeat },
+      features: plan.features,
+    };
 
-        packageCards.classList.add('hidden');
-        seatCards.classList.remove('hidden');
-      } else {
-        slidingBg.style.transform = 'translateX(0)';
-        packageLabel.classList.remove('text-gray-700');
-        packageLabel.classList.add('text-white');
-        seatLabel.classList.remove('text-white');
-        seatLabel.classList.add('text-gray-700');
+    // Store plan data for the selection pages
+    localStorage.setItem("selectedPlan", JSON.stringify(planData));
 
-        packageCards.classList.remove('hidden');
-        seatCards.classList.add('hidden');
+    // Navigate to appropriate selection page
+    if (planType === "package") {
+      if (plan.id === "lite") {
+        window.location.href = "/plans/choose-lite";
+      } else if (plan.id === "pro") {
+        window.location.href = "/plans/choose-pro";
       }
+    } else {
+      // For seat plans, go directly to payment with seat selection
+      window.location.href = `/plans/payment?planType=seat&planId=${plan.id}`;
     }
-
-    packageRadio?.addEventListener('change', updateToggle);
-    seatRadio?.addEventListener('change', updateToggle);
-    updateToggle();
-  }, []);
+  };
 
   return (
     <main className="font-inter min-h-screen bg-gradient-to-b from-white via-blue-100 to-blue-500 flex items-center justify-center">
       <section className="py-20 text-center">
-        <h2 className="py-3 text-5xl font-bold mb-10 text-gray-900" style={{ textShadow: '1px 1px 3px rgba(0, 0, 0, 0.5)' }}>
+        <h2
+          className="py-3 text-5xl font-bold mb-10 text-gray-900"
+          style={{ textShadow: "1px 1px 3px rgba(0, 0, 0, 0.5)" }}
+        >
           HRIS Pricing Plans
         </h2>
-
         <p className="text-gray-800 mb-10">
-          <span className="block">Choose the plan that best suits your business!</span>
-          <span className="block">This HRIS offers both subscription and pay-as-you-go payment options,</span>
+          <span className="block">
+            Choose the plan that best suits your business!
+          </span>
+          <span className="block">
+            This HRIS offers both subscription and pay-as-you-go payment
+            options,
+          </span>
           <span className="block">available in the following packages:</span>
-        </p>
-
+        </p>{" "}
         <div className="flex justify-center mt-6 mb-10">
           <div className="relative flex bg-white shadow-md rounded-full overflow-hidden w-80">
-            <input type="radio" name="tab" id="package" className="hidden" defaultChecked />
-            <input type="radio" name="tab" id="seat" className="hidden" />
-            <div id="slidingBg" className="absolute top-0 left-0 h-full w-1/2 bg-[#1D395E] rounded-full transform transition-all duration-300"></div>
-            <label htmlFor="package" id="packageLabel" className="relative z-10 w-1/2 py-3 text-sm font-semibold text-center cursor-pointer transition-all text-white">Package</label>
-            <label htmlFor="seat" id="seatLabel" className="relative z-10 w-1/2 py-3 text-sm font-semibold text-center cursor-pointer transition-all text-gray-700">Seat</label>
+            <input
+              type="radio"
+              name="tab"
+              id="package"
+              className="hidden"
+              checked={currentPlanType === "package"}
+              onChange={() => handleToggleChange("package")}
+            />
+            <input
+              type="radio"
+              name="tab"
+              id="seat"
+              className="hidden"
+              checked={currentPlanType === "seat"}
+              onChange={() => handleToggleChange("seat")}
+            />
+            <div
+              className={`absolute top-0 left-0 h-full w-1/2 bg-[#1D395E] rounded-full transform transition-all duration-300 ${
+                currentPlanType === "seat"
+                  ? "translate-x-full"
+                  : "translate-x-0"
+              }`}
+            ></div>
+            <label
+              htmlFor="package"
+              className={`relative z-10 w-1/2 py-3 text-sm font-semibold text-center cursor-pointer transition-all ${
+                currentPlanType === "package" ? "text-white" : "text-gray-700"
+              }`}
+            >
+              Package
+            </label>
+            <label
+              htmlFor="seat"
+              className={`relative z-10 w-1/2 py-3 text-sm font-semibold text-center cursor-pointer transition-all ${
+                currentPlanType === "seat" ? "text-white" : "text-gray-700"
+              }`}
+            >
+              Seat
+            </label>
           </div>
-        </div>
+        </div>{" "}
+        <div className="min-h-[600px]">
+          {" "}
+          {/* Package Plans */}
+          <div
+            className={`grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-6 transition-all duration-300 ${
+              currentPlanType === "package" ? "block" : "hidden"
+            }`}
+          >
+            {PACKAGE_PLANS.map((plan: Plan) => {
+              const getCardStyles = () => {
+                if (plan.id === "starter")
+                  return "bg-gradient-to-l from-[#1D395E] to-[#3C77C4] text-white";
+                if (plan.id === "lite") return "bg-[#2E2E3A] text-white";
+                return "bg-gradient-to-l from-[#7CA5BF] to-[#3A4D59] text-white";
+              };
 
-        <div id="pricingCardsContainer" className="min-h-[600px]">
-          <div id="packageCards" className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-6">
-            <div className="bg-gradient-to-l from-[#1D395E] to-[#3C77C4] text-white rounded-xl shadow-lg p-8">
-              <h3 className="text-2xl font-semibold text-left">Starter</h3>
-              <p className="text-4xl font-bold text-left">Free</p>
-              <hr className="border-t-2 border-white my-4" />
-              <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
-                <li>GPS-based attendance validation</li>
-                <li>Employee data management</li>
-                <li>Leave and time-off request</li>
-                <li>Overtime management</li>
-                <li>Fixed work schedule management</li>
-                <li>Automatic fixed calculation</li>
-              </ul>
-              <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Current Plan</button>
-            </div>
+              const getButtonStyles = () => {
+                if (plan.id === "starter")
+                  return "bg-[#2D8DFE] text-white hover:bg-[#2278D2]";
+                return "bg-white text-blue-500 hover:bg-gray-200";
+              };
 
-            <div className="bg-[#2E2E3A] text-white rounded-xl shadow-lg p-8">
-              <h3 className="text-2xl font-semibold text-left">Lite <span className="text-sm">(Recommended)</span></h3>
-              <p className="text-4xl font-bold text-left">$15 <span className="text-lg">/year</span></p>
-              <hr className="border-t-2 border-white my-4" />
-              <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
-                <li>All standard features</li>
-                <li>Clock-in clock-out attendance settings</li>
-                <li>Employee document management</li>
-                <li>Sick leave & time-out settings</li>
-                <li>Shift management</li>
-                <li>Site password protection</li>
-              </ul>
-              <Link href="/choose-package-lite" className="mt-6 w-full bg-white text-blue-500 font-bold py-3 rounded-lg hover:bg-gray-200 transition block text-center">Upgrade Plan</Link>
-            </div>
+              return (
+                <div
+                  key={plan.id}
+                  className={`${getCardStyles()} rounded-xl shadow-lg p-8`}
+                >
+                  <h3 className="text-2xl font-semibold text-left">
+                    {plan.name}
+                    {plan.recommended && (
+                      <span className="text-sm"> (Recommended)</span>
+                    )}
+                  </h3>{" "}
+                  <p className="text-4xl font-bold text-left">
+                    {plan.id === "starter"
+                      ? "Free"
+                      : `Rp ${plan.price.yearly.toLocaleString("id-ID")}`}
+                    {plan.id !== "starter" && (
+                      <span className="text-lg">/year</span>
+                    )}
+                  </p>
+                  <hr className="border-t-2 border-white my-4" />{" "}
+                  <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
+                    {plan.features
+                      .slice(0, 6)
+                      .map((feature: any, index: number) => (
+                        <li key={index}>{feature.name}</li>
+                      ))}
+                  </ul>
+                  {plan.id === "starter" ? (
+                    <button
+                      className={`mt-6 w-full ${getButtonStyles()} font-bold py-3 rounded-lg transition`}
+                    >
+                      Current Plan
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handlePlanSelect(plan, "package")}
+                      className={`mt-6 w-full ${getButtonStyles()} font-bold py-3 rounded-lg transition`}
+                    >
+                      {plan.buttonText}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>{" "}
+          {/* Seat Plans */}
+          <div
+            className={`grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-6 transition-all duration-300 ${
+              currentPlanType === "seat" ? "block" : "hidden"
+            }`}
+          >
+            {SEAT_PLANS.map((plan: SeatPlan, index: number) => {
+              const getCardStyles = () => {
+                if (index === 0)
+                  return "bg-gradient-to-l from-[#1D395E] to-[#3C77C4] text-white";
+                if (index === 1) return "bg-[#2E2E3A] text-white";
+                return "bg-gradient-to-l from-[#7CA5BF] to-[#3A4D59] text-white";
+              };
 
-            <div className="bg-gradient-to-l from-[#7CA5BF] to-[#3A4D59] text-white rounded-xl shadow-lg p-8">
-              <h3 className="text-2xl font-semibold text-left">Pro</h3>
-              <p className="text-4xl font-bold text-left">$35 <span className="text-lg">/year</span></p>
-              <hr className="border-t-2 border-white my-4" />
-              <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
-                <li>2 Projects</li>
-                <li>Client billing</li>
-                <li>Free staging</li>
-                <li>Code export</li>
-                <li>White labeling</li>
-                <li>Site password protection</li>
-              </ul>
-              <Link href="/choose-package-pro" className="mt-6 w-full bg-white text-blue-500 font-bold py-3 rounded-lg hover:bg-gray-200 transition block text-center">Upgrade Plan</Link>
-            </div>
-          </div>
-
-          <div id="seatCards" className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-6 hidden">
-            <div className="bg-gradient-to-l from-[#1D395E] to-[#3C77C4] text-white rounded-xl shadow-lg p-8">
-              <h3 className="text-2xl font-semibold text-left">Standard Seat</h3>
-              <p className="text-4xl font-bold text-left">$5 <span className="text-lg">/seat</span></p>
-              <hr className="border-t-2 border-white my-4" />
-              <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
-                <li>Basic access</li>
-                <li>Time tracking</li>
-                <li>Email support</li>
-              </ul>
-              <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Select Seat</button>
-            </div>
-
-            <div className="bg-[#2E2E3A] text-white rounded-xl shadow-lg p-8">
-              <h3 className="text-2xl font-semibold text-left">Premium Seat</h3>
-              <p className="text-4xl font-bold text-left">$10 <span className="text-lg">/seat</span></p>
-              <hr className="border-t-2 border-white my-4" />
-              <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
-                <li>Advanced access</li>
-                <li>Priority support</li>
-                <li>Detailed reports</li>
-              </ul>
-              <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Select Seat</button>
-            </div>
-
-            <div className="bg-gradient-to-l from-[#7CA5BF] to-[#3A4D59] text-white rounded-xl shadow-lg p-8">
-              <h3 className="text-2xl font-semibold text-left">Enterprise Seat</h3>
-              <p className="text-4xl font-bold text-left">$15 <span className="text-lg">/seat</span></p>
-              <hr className="border-t-2 border-white my-4" />
-              <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
-                <li>Full feature access</li>
-                <li>Dedicated support</li>
-                <li>Custom integrations</li>
-              </ul>
-              <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Select Seat</button>
-            </div>
+              return (
+                <div
+                  key={plan.id}
+                  className={`${getCardStyles()} rounded-xl shadow-lg p-8`}
+                >
+                  <h3 className="text-2xl font-semibold text-left">
+                    {plan.name}
+                  </h3>{" "}
+                  <p className="text-4xl font-bold text-left">
+                    Rp {plan.pricePerSeat.toLocaleString("id-ID")}{" "}
+                    <span className="text-lg">/seat</span>
+                  </p>
+                  <hr className="border-t-2 border-white my-4" />{" "}
+                  <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
+                    {plan.features
+                      .slice(0, 3)
+                      .map((feature: any, index: number) => (
+                        <li key={index}>{feature.name}</li>
+                      ))}
+                  </ul>
+                  <button
+                    onClick={() => handlePlanSelect(plan, "seat")}
+                    className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition"
+                  >
+                    {plan.buttonText}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

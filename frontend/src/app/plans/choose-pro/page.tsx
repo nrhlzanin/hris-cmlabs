@@ -5,19 +5,60 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { PACKAGE_PLANS } from '../config';
+import { Plan, CartItem } from '../types';
 
 export default function ChoosePackagePro() {
-  const [billingPeriod, setBillingPeriod] = useState("Single Payment");
-  const [pricePerUser, setPricePerUser] = useState(17000);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
   const [employeeCount, setEmployeeCount] = useState(2);
   const [teamSize, setTeamSize] = useState("1 - 50");
+  const [plan, setPlan] = useState<Plan | null>(null);
+
+  useEffect(() => {
+    // Load plan data
+    const savedPlan = localStorage.getItem('selectedPlan');
+    if (savedPlan) {
+      setPlan(JSON.parse(savedPlan));
+    } else {
+      // Fallback to Pro plan from config
+      const proPlan = PACKAGE_PLANS.find((p: any) => p.id === 'pro');
+      if (proPlan) setPlan(proPlan);
+    }
+  }, []);
 
   useEffect(() => {
     const defaultCount = parseInt(teamSize.split("-")[0].trim());
     setEmployeeCount(defaultCount);
   }, [teamSize]);
 
-  const subtotal = pricePerUser * employeeCount;
+  const getCurrentPrice = () => {
+    if (!plan) return 0;
+    return billingPeriod === 'yearly' ? plan.price.yearly : plan.price.monthly;
+  };
+
+  const subtotal = getCurrentPrice() * employeeCount;
+  const tax = Math.round(subtotal * 0.11); // 11% VAT
+  const total = subtotal + tax;
+
+  const handleConfirmUpgrade = () => {
+    if (!plan) return;
+
+    const cartItem: CartItem = {
+      planId: plan.id,
+      planName: plan.name,
+      planType: 'package',
+      billingPeriod: billingPeriod,
+      quantity: employeeCount,
+      unitPrice: getCurrentPrice(),
+      totalPrice: total
+    };
+
+    // Store cart data for payment page
+    localStorage.setItem('cartData', JSON.stringify([cartItem]));
+    
+    // Navigate to payment
+    window.location.href = '/plans/payment';
+  };
 
   return (
     <main className="bg-white text-gray-900 font-inter min-h-screen flex flex-col">
@@ -30,31 +71,22 @@ export default function ChoosePackagePro() {
             <p className="text-gray-500 mb-1">Upgrade to Pro</p>
             <Link href="/plans/pricing-plans" className="text-sm text-blue-600 underline inline-block mb-6">
               Change Plan
-            </Link>
-
-            <h2 className="font-semibold mb-2">Billing Period</h2>
-            <div className="flex space-x-4 mb-6 flex-wrap">
+            </Link>            <h2 className="font-semibold mb-2">Billing Period</h2>            <div className="flex space-x-4 mb-6 flex-wrap">
               <button
-                onClick={() => {
-                  setPricePerUser(17000);
-                  setBillingPeriod("Single Payment");
-                }}
+                onClick={() => setBillingPeriod('yearly')}
                 className={`billing-btn px-4 py-2 rounded transition w-full sm:w-auto mb-2 sm:mb-0 text-white ${
-                  billingPeriod === "Single Payment" ? "bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
+                  billingPeriod === 'yearly' ? "bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
                 }`}
               >
-                Single Payment - Rp 17.000 / User
+                Yearly - Rp {plan?.price.yearly?.toLocaleString('id-ID') || '700.000'} / User
               </button>
               <button
-                onClick={() => {
-                  setPricePerUser(7000);
-                  setBillingPeriod("Monthly");
-                }}
+                onClick={() => setBillingPeriod('monthly')}
                 className={`billing-btn px-4 py-2 rounded transition w-full sm:w-auto text-white ${
-                  billingPeriod === "Monthly" ? "bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
+                  billingPeriod === 'monthly' ? "bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
                 }`}
               >
-                Monthly - Rp 7.000 / User
+                Monthly - Rp {plan?.price.monthly?.toLocaleString('id-ID') || '750.000'} / User
               </button>
             </div>
 
@@ -100,17 +132,16 @@ export default function ChoosePackagePro() {
 
         {/* Right Section */}
         <div className="bg-gray-100 p-8 rounded-lg shadow mt-8 sm:mt-0 flex flex-col justify-between flex-grow">
-          <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
-          <div className="text-sm space-y-2">
+          <h2 className="text-2xl font-bold mb-6">Order Summary</h2>          <div className="text-sm space-y-2">
             <div className="grid grid-cols-3 gap-x-2">
               <span>Package</span>
               <span className="text-center">:</span>
-              <span>Pro</span>
+              <span>{plan?.name || 'Pro'}</span>
             </div>
             <div className="grid grid-cols-3 gap-x-2">
               <span>Billing Period</span>
               <span className="text-center">:</span>
-              <span>{billingPeriod}</span>
+              <span>{billingPeriod.charAt(0).toUpperCase() + billingPeriod.slice(1)}</span>
             </div>
             <div className="grid grid-cols-3 gap-x-2">
               <span>Team Size</span>
@@ -121,35 +152,35 @@ export default function ChoosePackagePro() {
               <span>Number of Employees</span>
               <span className="text-center">:</span>
               <span>{employeeCount}</span>
-            </div>
-            <div className="grid grid-cols-3 gap-x-2">
+            </div>            <div className="grid grid-cols-3 gap-x-2">
               <span>Price per User</span>
               <span className="text-center">:</span>
-              <span>Rp {pricePerUser.toLocaleString()}</span>
+              <span>Rp {getCurrentPrice().toLocaleString('id-ID')}</span>
             </div>
           </div>
 
-          <hr className="my-6 border-black" />
-
-          <div className="text-sm space-y-2">
+          <hr className="my-6 border-black" />          <div className="text-sm space-y-2">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span>Rp {subtotal.toLocaleString()}</span>
+              <span>Rp {subtotal.toLocaleString('id-ID')}</span>
             </div>
             <div className="flex justify-between">
-              <span>Tax</span>
-              <span>Rp 0</span>
+              <span>Tax (11%)</span>
+              <span>Rp {tax.toLocaleString('id-ID')}</span>
             </div>
           </div>
 
           <hr className="my-6 border-black" />
 
           <div className="flex justify-between font-bold text-lg mb-6">
-            <span>Total at renewal</span>
-            <span>Rp {subtotal.toLocaleString()}</span>
+            <span>Total</span>
+            <span>Rp {total.toLocaleString('id-ID')}</span>
           </div>
 
-          <button className="w-full bg-blue-900 text-white py-3 rounded hover:bg-blue-800 font-semibold">
+          <button 
+            onClick={handleConfirmUpgrade}
+            className="w-full bg-blue-900 text-white py-3 rounded hover:bg-blue-800 font-semibold"
+          >
             Confirm and upgrade
           </button>
         </div>
