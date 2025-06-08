@@ -33,6 +33,10 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
+        'last_login_at',
+        'password_changed_at',
+        'is_active',
+        'login_attempts',
     ];
 
     /**
@@ -54,8 +58,12 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
+            'password_changed_at' => 'datetime',
             'password' => 'hashed',
             'role' => 'string',
+            'is_active' => 'boolean',
+            'login_attempts' => 'array',
         ];
     }
 

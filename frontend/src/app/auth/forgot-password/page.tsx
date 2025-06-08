@@ -9,21 +9,54 @@ import { useRouter } from "next/navigation";
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     
     if (!email) {
       setError("Email is required");
+      return;
     } else if (!emailPattern.test(email)) {
       setError("Please enter a valid email address");
-    } else {
-      setError("");
-      console.log("Email submitted:", email);
-      router.push(`/auth/check-your-email?email=${encodeURIComponent(email)}`);
+      return;
+    }
+
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSuccessMessage(result.message);
+        // Redirect to check email page after 2 seconds
+        setTimeout(() => {
+          router.push(`/auth/check-your-email?email=${encodeURIComponent(email)}`);
+        }, 2000);
+      } else {
+        setError(result.message || "Failed to send reset link. Please try again.");
+      }
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      setError("Connection error. Please check your internet connection and try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 

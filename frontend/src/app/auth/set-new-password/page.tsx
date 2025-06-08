@@ -1,41 +1,119 @@
 ﻿"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import { useRouter } from "next/navigation"; // Import useRouter
+import { useRouter } from "next/navigation";
 
 export default function SetNewPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState({
     password: "",
     confirmPassword: "",
+    general: "",
   });
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const router = useRouter(); // Initialize the router
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+  const email = searchParams.get("email");
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    // Check if required parameters are present
+    if (!token || !email) {
+      setError({
+        password: "",
+        confirmPassword: "",
+        general: "Invalid reset link. Please request a new password reset.",
+      });
+    }
+  }, [token, email]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     let newErrors = {
       password: "",
       confirmPassword: "",
+      general: "",
     };
 
     if (!password) newErrors.password = "Password is required";
     if (!confirmPassword) newErrors.confirmPassword = "Please confirm your password";
     if (password !== confirmPassword) newErrors.confirmPassword = "Passwords do not match";
 
+    // Enhanced password validation
+    if (password && password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters";
+    }
+
+    if (!token || !email) {
+      newErrors.general = "Invalid reset link. Please request a new password reset.";
+    }
+
     setError(newErrors);
 
-    if (!Object.values(newErrors).some((error) => error)) {
-      console.log("Password reset successful");
-      router.push("../auth/password-update"); // Redirect to password-update page
+    if (Object.values(newErrors).some((error) => error)) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          email: email,
+          token: token,
+          password: password,
+          password_confirmation: confirmPassword,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSuccessMessage(result.message);
+        // Redirect to password update success page after 2 seconds
+        setTimeout(() => {
+          router.push('/auth/password-update');
+        }, 2000);
+      } else {
+        if (result.errors) {
+          setError({
+            password: result.errors.password?.[0] || "",
+            confirmPassword: result.errors.password_confirmation?.[0] || "",
+            general: result.errors.email?.[0] || result.errors.token?.[0] || "",
+          });
+        } else {
+          setError({
+            password: "",
+            confirmPassword: "",
+            general: result.message || "Failed to reset password. Please try again.",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Reset password error:', error);
+      setError({
+        password: "",
+        confirmPassword: "",
+        general: "Connection error. Please check your internet connection and try again.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -61,9 +139,21 @@ export default function SetNewPasswordPage() {
             Enter your new password below to complete the reset process.
             Ensure it’s strong and secure.
           </p>
-        </div>
+        </div>        <form onSubmit={handleSubmit} className="flex flex-col gap-6 text-black">
+          {/* General Error Message */}
+          {error.general && (
+            <div className="p-3 rounded bg-red-100 border border-red-400 text-red-700 text-sm">
+              {error.general}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6 text-black">
+          {/* Success Message */}
+          {successMessage && (
+            <div className="p-3 rounded bg-green-100 border border-green-400 text-green-700 text-sm">
+              {successMessage}
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium mb-1">Password</label>
             <div className="relative">
@@ -74,11 +164,13 @@ export default function SetNewPasswordPage() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className={`w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${error.password ? "border-red-500" : ""}`}
+                disabled={isLoading || !!successMessage}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute top-1/2 right-4 transform -translate-y-1/2"
+                disabled={isLoading || !!successMessage}
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -96,11 +188,13 @@ export default function SetNewPasswordPage() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                 placeholder="Enter your confirm password"
                 className={`w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${error.confirmPassword ? "border-red-500" : ""}`}
+                disabled={isLoading || !!successMessage}
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute top-1/2 right-4 transform -translate-y-1/2"
+                disabled={isLoading || !!successMessage}
               >
                 {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
               </button>
@@ -111,9 +205,10 @@ export default function SetNewPasswordPage() {
           {/* Reset Password Button */}
           <button
             type="submit"
-            className="w-full bg-red-800 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-lg hover:bg-red-700 transition-all duration-300"
+            disabled={isLoading || !!successMessage || !token || !email}
+            className="w-full bg-red-800 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-lg hover:bg-red-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Reset password
+            {isLoading ? "Resetting..." : "Reset password"}
           </button>
 
           {/* Back to Login */}

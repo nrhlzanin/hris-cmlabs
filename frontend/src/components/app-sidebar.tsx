@@ -35,7 +35,7 @@ const data = {
     },
     {
       title: "Checkclock",
-      url: "/admin/checkclock", 
+      url: "/admin/checklock", 
       icon: Clock,
     },
     {

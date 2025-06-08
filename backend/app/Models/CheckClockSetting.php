@@ -18,6 +18,9 @@ class CheckClockSetting extends Model
         'name',
         'type',
         'geo_loc',
+        'office_latitude',
+        'office_longitude',
+        'location_radius',
     ];
 
     /**
@@ -29,6 +32,9 @@ class CheckClockSetting extends Model
     {
         return [
             'type' => 'string',
+            'office_latitude' => 'decimal:8',
+            'office_longitude' => 'decimal:8',
+            'location_radius' => 'integer',
         ];
     }
 
