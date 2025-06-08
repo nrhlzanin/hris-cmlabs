@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('mobile_phone');
             $table->enum('gender', ['Men', 'Woman']);
-            $table->enum('last_education', ['high_school', 'SMA', 'SMK_Sederajat', 'bachelor', 'S1', 'master', 'S2']);
+            $table->enum('last_education', ['SMA/SMK Sederajat', 'S1', 'S2']); // Updated enum values
             $table->string('place_of_birth');
             $table->date('date_of_birth');
             $table->string('position');

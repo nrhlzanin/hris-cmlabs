@@ -39,7 +39,7 @@ export default function ChoosePackagePage() {
 
             <h1 className="text-3xl font-bold mb-1">Choosing Package</h1>
             <p className="text-gray-500 mb-1">Upgrade to Lite</p>
-            <Link href="/pricing-plans" className="text-sm text-blue-600 underline inline-block mb-6">
+            <Link href="/plans/pricing-plans" className="text-sm text-blue-600 underline inline-block mb-6">
               Change Plan
             </Link>
 

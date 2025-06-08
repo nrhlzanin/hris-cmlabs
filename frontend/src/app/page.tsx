@@ -1,7 +1,45 @@
 // app/page.tsx
+"use client";
+
 import Image from "next/image";
+import Link from 'next/link';
+import { useEffect } from "react";
 
 export default function Home() {
+  useEffect(() => {
+    const packageRadio = document.getElementById('package') as HTMLInputElement;
+    const seatRadio = document.getElementById('seat') as HTMLInputElement;
+    const packageLabel = document.getElementById('packageLabel')!;
+    const seatLabel = document.getElementById('seatLabel')!;
+    const slidingBg = document.getElementById('slidingBg')!;
+    const packageCards = document.getElementById('packageCards')!;
+    const seatCards = document.getElementById('seatCards')!;
+
+    function updateToggle() {
+      if (seatRadio.checked) {
+        slidingBg.style.transform = 'translateX(100%)';
+        packageLabel.classList.remove('text-white');
+        packageLabel.classList.add('text-gray-700');
+        seatLabel.classList.remove('text-gray-700');
+        seatLabel.classList.add('text-white');
+        packageCards.classList.add('hidden');
+        seatCards.classList.remove('hidden');
+      } else {
+        slidingBg.style.transform = 'translateX(0)';
+        packageLabel.classList.remove('text-gray-700');
+        packageLabel.classList.add('text-white');
+        seatLabel.classList.remove('text-white');
+        seatLabel.classList.add('text-gray-700');
+        packageCards.classList.remove('hidden');
+        seatCards.classList.add('hidden');
+      }
+    }
+
+    packageRadio?.addEventListener('change', updateToggle);
+    seatRadio?.addEventListener('change', updateToggle);
+    updateToggle();
+  }, []);
+
   return (
     <>
       {/* Navbar */}
@@ -117,7 +155,7 @@ export default function Home() {
       {/* Pricing Plans */}
       <section id="services" className="relative bg-gradient-to-b from-blue-50 to-blue-100">
         <div className="container mx-auto px-8 py-20">
-          <h2 className="text-center text-3xl font-bold text-gray-900 mb-2">
+          <h2 className="text-center text-5xl font-bold mb-10 text-gray-900">
             HRIS Pricing Plans
           </h2>
           <p className="text-center text-gray-800 mb-8 max-w-screen-md mx-auto px-4">
@@ -126,84 +164,114 @@ export default function Home() {
             following packages:
           </p>
 
-          {/* Toggle Paket / Seat */}
-          <div className="flex justify-center mb-12">
-            <button className="px-4 py-2 bg-blue-800 text-white rounded-l-md">
-              Package
-            </button>
-            <button className="px-4 py-2 bg-white text-blue-800 border border-blue-800 rounded-r-md">
-              Seat
-            </button>
+          {/* Toggle Package/Seat */}
+          <div className="flex justify-center mt-6 mb-10">
+            <div className="relative flex bg-white shadow-md rounded-full overflow-hidden w-80">
+              <input type="radio" name="tab" id="package" className="hidden" defaultChecked />
+              <input type="radio" name="tab" id="seat" className="hidden" />
+              <div id="slidingBg" className="absolute top-0 left-0 h-full w-1/2 bg-[#1D395E] rounded-full transform transition-all duration-300"></div>
+              <label htmlFor="package" id="packageLabel" className="relative z-10 w-1/2 py-3 text-sm font-semibold text-center cursor-pointer transition-all text-white">Package</label>
+              <label htmlFor="seat" id="seatLabel" className="relative z-10 w-1/2 py-3 text-sm font-semibold text-center cursor-pointer transition-all text-gray-700">Seat</label>
+            </div>
           </div>
 
-          {/* Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-            {/* Starter */}
-            <div className="bg-white shadow-lg rounded-xl p-6">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Starter</h3>
-              <p className="text-2xl font-bold text-gray-900 mb-4">Free</p>
-              <p className="text-gray-800 mb-6">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-              </p>
-              <ul className="space-y-2 text-gray-800 mb-6">
-                <li>GPS based attendance validation</li>
-                <li>Employee data management</li>
-                <li>Leave and time-off request</li>
-                <li>Overtime management</li>
-                <li>Fixed work schedule management</li>
-                <li>Automatic fixed calculation</li>
-              </ul>
-              <button className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                Current plan
-              </button>
+          {/* Pricing Cards Container */}
+          <div id="pricingCardsContainer" className="min-h-[600px]">
+            {/* Package Cards */}
+            <div id="packageCards" className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {/* Starter Card */}
+              <div className="bg-gradient-to-l from-[#1D395E] to-[#3C77C4] text-white rounded-xl shadow-lg p-8">
+                <h3 className="text-2xl font-semibold text-left">Starter</h3>
+                <p className="text-4xl font-bold text-left">Free</p>
+                <hr className="border-t-2 border-white my-4" />
+                <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
+                  <li>GPS-based attendance validation</li>
+                  <li>Employee data management</li>
+                  <li>Leave and time-off request</li>
+                  <li>Overtime management</li>
+                  <li>Fixed work schedule management</li>
+                  <li>Automatic fixed calculation</li>
+                </ul>
+                <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">
+                  Current Plan
+                </button>
+              </div>
+
+              {/* Lite Card */}
+              <div className="bg-[#2E2E3A] text-white rounded-xl shadow-lg p-8">
+                <h3 className="text-2xl font-semibold text-left">Lite <span className="text-sm">(Recommended)</span></h3>
+                <p className="text-4xl font-bold text-left">$15 <span className="text-lg">/year</span></p>
+                <hr className="border-t-2 border-white my-4" />
+                <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
+                  <li>All standard features</li>
+                  <li>Clock-in clock-out attendance settings</li>
+                  <li>Employee document management</li>
+                  <li>Sick leave & time-out settings</li>
+                  <li>Shift management</li>
+                  <li>Site password protection</li>
+                </ul>
+                <Link href="/plans/choose-lite" className="mt-6 w-full bg-white text-blue-500 font-bold py-3 rounded-lg hover:bg-gray-200 transition block text-center">
+                  Upgrade Plan
+                </Link>
+              </div>
+
+              {/* Pro Card */}
+              <div className="bg-gradient-to-l from-[#7CA5BF] to-[#3A4D59] text-white rounded-xl shadow-lg p-8">
+                <h3 className="text-2xl font-semibold text-left">Pro</h3>
+                <p className="text-4xl font-bold text-left">$35 <span className="text-lg">/year</span></p>
+                <hr className="border-t-2 border-white my-4" />
+                <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
+                  <li>2 Projects</li>
+                  <li>Client billing</li>
+                  <li>Free staging</li>
+                  <li>Code export</li>
+                  <li>White labeling</li>
+                  <li>Site password protection</li>
+                </ul>
+                <Link href="/plans/choose-pro" className="mt-6 w-full bg-white text-blue-500 font-bold py-3 rounded-lg hover:bg-gray-200 transition block text-center">
+                  Upgrade Plan
+                </Link>
+              </div>
             </div>
 
-            {/* Lite (Recommended) */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-xl rounded-xl p-6 relative">
-              <span className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-medium">
-                Recommended
-              </span>
-              <h3 className="text-xl font-semibold mb-4">Lite</h3>
-              <p className="text-2xl font-bold mb-4">
-                $15<span className="text-base">/year</span>
-              </p>
-              <p className="text-white opacity-80 mb-6">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-              </p>
-              <ul className="space-y-2 mb-6">
-                <li>All standard features</li>
-                <li>Clock-in Clock-out attendance settings</li>
-                <li>Employee document management</li>
-                <li>Sick leave & time-out settings</li>
-                <li>Shift management</li>
-                <li>Site password protection</li>
+            {/* Seat Cards */}
+            <div id="seatCards" className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-6 hidden">
+            <div className="bg-gradient-to-l from-[#1D395E] to-[#3C77C4] text-white rounded-xl shadow-lg p-8">
+              <h3 className="text-2xl font-semibold text-left">Standard Seat</h3>
+              <p className="text-4xl font-bold text-left">$5 <span className="text-lg">/seat</span></p>
+              <hr className="border-t-2 border-white my-4" />
+              <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
+                <li>Basic access</li>
+                <li>Time tracking</li>
+                <li>Email support</li>
               </ul>
-              <button className="w-full px-4 py-2 bg-yellow-400 text-gray-900 rounded-md hover:bg-yellow-300">
-                Upgrade plan
-              </button>
+              <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Select Seat</button>
             </div>
 
-            {/* Pro */}
-            <div className="bg-gradient-to-r from-gray-300 to-gray-500 text-gray-900 shadow-lg rounded-xl p-6">
-              <h3 className="text-xl font-semibold mb-4">Pro</h3>
-              <p className="text-2xl font-bold mb-4">
-                $35<span className="text-base">/year</span>
-              </p>
-              <p className="text-gray-800 opacity-90 mb-6">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor
-              </p>
-              <ul className="space-y-2 mb-6 text-gray-800">
-                <li>2 Projects</li>
-                <li>Client Billing</li>
-                <li>Free Staging</li>
-                <li>Code Export</li>
-                <li>White labeling</li>
-                <li>Site password protection</li>
+            <div className="bg-[#2E2E3A] text-white rounded-xl shadow-lg p-8">
+              <h3 className="text-2xl font-semibold text-left">Premium Seat</h3>
+              <p className="text-4xl font-bold text-left">$10 <span className="text-lg">/seat</span></p>
+              <hr className="border-t-2 border-white my-4" />
+              <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
+                <li>Advanced access</li>
+                <li>Priority support</li>
+                <li>Detailed reports</li>
               </ul>
-              <button className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                Upgrade plan
-              </button>
+              <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Select Seat</button>
             </div>
+
+            <div className="bg-gradient-to-l from-[#7CA5BF] to-[#3A4D59] text-white rounded-xl shadow-lg p-8">
+              <h3 className="text-2xl font-semibold text-left">Enterprise Seat</h3>
+              <p className="text-4xl font-bold text-left">$15 <span className="text-lg">/seat</span></p>
+              <hr className="border-t-2 border-white my-4" />
+              <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
+                <li>Full feature access</li>
+                <li>Dedicated support</li>
+                <li>Custom integrations</li>
+              </ul>
+              <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Select Seat</button>
+            </div>
+          </div>
           </div>
         </div>
       </section>

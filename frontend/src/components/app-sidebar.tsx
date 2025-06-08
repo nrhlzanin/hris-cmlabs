@@ -28,8 +28,13 @@ const data = {
       isActive: true,
     },
     {
+<<<<<<< HEAD
       title: "Employee Database",
       url: "/admin/employee",
+=======
+      title: "Employee Database", 
+      url: "/admin/employee/employee-database",
+>>>>>>> 1478f052b23f1b926411404f81ea86e9d8d63a56
       icon: Users,
     },
     {
