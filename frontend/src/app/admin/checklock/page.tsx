@@ -1,305 +1,221 @@
 ﻿'use client';
+
 import React, { useState } from "react";
 import Link from "next/link";
+import ApprovalModal from "@/app/components/admin/checklock/approval";
+import DetailsModal from "@/app/components/admin/checklock/detailsmodal";
+import { FaCheck, FaTimes } from "react-icons/fa";
 
+// Dummy data for attendance overview
 const dummyData = [
   {
     id: 1,
     name: "Juanita",
     position: "CEO",
-    clockIn: "08.00",
-    clockOut: "18.30",
+    clockIn: "08:00",
+    clockOut: "18:30",
     workHours: "10h 30m",
     approved: null,
   },
-  // nanti bisa tambah data lain
+  {
+    id: 2,
+    name: "Andi",
+    position: "Developer",
+    clockIn: "09:00",
+    clockOut: "18:00",
+    workHours: "9h 0m",
+    approved: true,
+  },
+  {
+    id: 3,
+    name: "Sari",
+    position: "Designer",
+    clockIn: "08:30",
+    clockOut: "17:30",
+    workHours: "9h 0m",
+    approved: false,
+  },
+  // Add more data as needed
 ];
 
 export default function AttendanceOverview() {
   const [attendanceList, setAttendanceList] = useState(dummyData);
+  const [searchTerm, setSearchTerm] = useState("");
   const [isApprovalOpen, setApprovalOpen] = useState(false);
   const [isDetailsOpen, setDetailsOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  // buka modal approve dengan pilih row
-  const openApprovalModal = (id) => {
+  const openApprovalModal = (id: number) => {
     setSelectedId(id);
     setApprovalOpen(true);
   };
 
-  // buka modal details dengan pilih row
-  const openDetailsModal = (id) => {
+  const openDetailsModal = (id: number) => {
     setSelectedId(id);
     setDetailsOpen(true);
   };
 
-  // approve attendance by id
+  const closeApprovalModal = () => {
+    setApprovalOpen(false);
+    setSelectedId(null);
+  };
+
+  const closeDetailsModal = () => {
+    setDetailsOpen(false);
+    setSelectedId(null);
+  };
+
   const handleApprove = () => {
     setAttendanceList((prev) =>
       prev.map((item) =>
         item.id === selectedId ? { ...item, approved: true } : item
       )
     );
-    setApprovalOpen(false);
+    closeApprovalModal();
   };
 
-  // reject attendance by id
   const handleReject = () => {
     setAttendanceList((prev) =>
       prev.map((item) =>
         item.id === selectedId ? { ...item, approved: false } : item
       )
     );
-    setApprovalOpen(false);
+    closeApprovalModal();
   };
 
-  // cari data yg dipilih untuk details modal
+  const filteredAttendance = attendanceList.filter((item) =>
+    item.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const selectedData = attendanceList.find((item) => item.id === selectedId);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="bg-white p-6 rounded shadow-lg max-w-6xl mx-auto">
-        <div className="flex justify-between mb-4">
-          <h2 className="text-2xl font-semibold">Checklock Overview</h2>
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8 w-full">
+      <div className="w-full max-w-7xl mx-auto bg-white rounded shadow p-6">
+        <h2 className="text-2xl font-semibold mb-4">Checklock Overview</h2>
+
+        <div className="flex justify-between mb-4 flex-wrap gap-2">
+          <input
+            type="text"
+            placeholder="Search Employee"
+            className="w-full sm:w-1/2 md:w-1/3 border rounded px-3 py-2"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            aria-label="Search Employee"
+          />
           <div className="flex gap-2">
             <button className="border px-4 py-2 rounded">Filter</button>
             <Link href="absensi/">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              <button className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
                 + Add Data
               </button>
             </Link>
           </div>
         </div>
 
-        <input
-          type="text"
-          placeholder="Search Employee"
-          className="w-full border rounded px-3 py-2 mb-4"
-        />
-
-        <table className="min-w-full text-sm text-left">
-          <thead>
-            <tr className="bg-gray-100">
-              <th className="px-4 py-2">Employee Name</th>
-              <th className="px-4 py-2">Jabatan</th>
-              <th className="px-4 py-2">Clock In</th>
-              <th className="px-4 py-2">Clock Out</th>
-              <th className="px-4 py-2">Work Hours</th>
-              <th className="px-4 py-2">Approve</th>
-              <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Action</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {attendanceList.map((item) => (
-              <tr key={item.id}>
-                <td className="px-4 py-2">{item.name}</td>
-                <td className="px-4 py-2">{item.position}</td>
-                <td className="px-4 py-2">{item.clockIn}</td>
-                <td className="px-4 py-2">{item.clockOut}</td>
-                <td className="px-4 py-2">{item.workHours}</td>
-                <td className="px-4 py-2">
-                  <button
-                    onClick={() => openApprovalModal(item.id)}
-                    className="flex items-center gap-2"
-                    aria-label="Approve attendance"
-                  >
-                    {item.approved === null ? (
-                      <img
-                        src="/icons/cross.svg"
-                        alt="not approved"
-                        className="w-5 h-5"
-                      />
-                    ) : item.approved ? (
-                      <img
-                        src="/icons/check.svg"
-                        alt="approved"
-                        className="w-5 h-5"
-                      />
-                    ) : (
-                      <img
-                        src="/icons/cross.svg"
-                        alt="rejected"
-                        className="w-5 h-5"
-                      />
-                    )}
-                  </button>
-                </td>
-                <td className="px-4 py-2">
-                  <span
-                    className={`px-2 py-1 rounded text-xs ${
-                      item.approved === null
-                        ? "bg-yellow-200 text-yellow-800"
-                        : item.approved
-                        ? "bg-green-200 text-green-800"
-                        : "bg-red-200 text-red-800"
-                    }`}
-                  >
-                    {item.approved === null
-                      ? "Waiting Approval"
-                      : item.approved
-                      ? "On Time"
-                      : "Late"}
-                  </span>
-                </td>
-                <td className="px-4 py-2">
-                  <button
-                    onClick={() => openDetailsModal(item.id)}
-                    className="bg-blue-500 text-white px-3 py-1 rounded text-xs"
-                  >
-                    View
-                  </button>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm text-left">
+            <thead>
+              <tr className="bg-gray-100 text-gray-700">
+                <th scope="col" className="px-4 py-2">Employee Name</th>
+                <th scope="col" className="px-4 py-2">Jabatan</th>
+                <th scope="col" className="px-4 py-2">Clock In</th>
+                <th scope="col" className="px-4 py-2">Clock Out</th>
+                <th scope="col" className="px-4 py-2">Work Hours</th>
+                <th scope="col" className="px-4 py-2">Approve</th>
+                <th scope="col" className="px-4 py-2">Status</th>
+                <th scope="col" className="px-4 py-2">Details</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredAttendance.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-4 text-center text-gray-500">
+                    No attendance data found.
+                  </td>
+                </tr>
+              ) : (
+                filteredAttendance.map((item) => (
+                  <tr key={item.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-2">{item.name}</td>
+                    <td className="px-4 py-2">{item.position}</td>
+                    <td className="px-4 py-2">{item.clockIn}</td>
+                    <td className="px-4 py-2">{item.clockOut}</td>
+                    <td className="px-4 py-2">{item.workHours}</td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => openApprovalModal(item.id)}
+                        className="flex items-center justify-center w-8 h-8 rounded hover:bg-gray-100"
+                        aria-label="Approve attendance"
+                      >
+                        {item.approved === null ? (
+                          <FaTimes
+                            className="w-5 h-5 text-gray-400"
+                            aria-label="Not Approved Yet"
+                          />
+                        ) : item.approved === true ? (
+                          <FaCheck
+                            className="w-5 h-5 text-green-600"
+                            aria-label="Approved"
+                          />
+                        ) : (
+                          <FaTimes
+                            className="w-5 h-5 text-red-600"
+                            aria-label="Rejected"
+                          />
+                        )}
+                      </button>
+                    </td>
+                    <td className="px-4 py-2">
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${item.approved === null
+                            ? "bg-yellow-200 text-yellow-700"
+                            : item.approved
+                              ? "bg-green-200 text-green-700"
+                              : "bg-red-200 text-red-700"
+                          }`}
+                      >
+                        {item.approved === null
+                          ? "Waiting Approval"
+                          : item.approved
+                            ? "On Time"
+                            : "Late"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2">
+                      <button
+                        onClick={() => openDetailsModal(item.id)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs"
+                      >
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Approval Modal */}
       {isApprovalOpen && selectedData && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-start">
-              <div className="flex gap-3">
-                <div className="w-12 h-12 rounded-full bg-blue-900"></div>
-                <div>
-                  <h2 className="text-lg font-semibold">Approve Attendance</h2>
-                  <p className="text-sm text-gray-600">
-                    Are you sure want to approve {selectedData.name}'s
-                    attendance?
-                    <br />
-                    This action cannot be undone.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setApprovalOpen(false)}
-                className="text-gray-600 hover:text-black text-xl font-bold"
-                aria-label="Close modal"
-              >
-                &times;
-              </button>
-            </div>
-            <div className="mt-6 flex justify-center gap-4">
-              <button
-                onClick={handleReject}
-                className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg"
-              >
-                Reject
-              </button>
-              <button
-                onClick={handleApprove}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2 rounded-lg"
-              >
-                Approve
-              </button>
-            </div>
-          </div>
-        </div>
+        <ApprovalModal
+          isOpen={isApprovalOpen}
+          selectedData={selectedData}
+          handleApprove={handleApprove}
+          handleReject={handleReject}
+          closeModal={closeApprovalModal}
+        />
       )}
 
       {/* Details Modal */}
       {isDetailsOpen && selectedData && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-2xl">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Attendance Details</h2>
-              <button
-                onClick={() => setDetailsOpen(false)}
-                className="text-gray-600 hover:text-black text-2xl font-bold"
-                aria-label="Close modal"
-              >
-                &times;
-              </button>
-            </div>
-
-            {/* Profile */}
-            <div className="flex items-center justify-between border rounded p-4 mb-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-blue-800 rounded-full"></div>
-                <div>
-                  <div className="font-semibold">{selectedData.name}</div>
-                  <div className="text-sm text-gray-600">{selectedData.position}</div>
-                </div>
-              </div>
-              <span
-                className={`px-3 py-1 rounded text-xs ${
-                  selectedData.approved === null
-                    ? "bg-yellow-200 text-yellow-800"
-                    : selectedData.approved
-                    ? "bg-green-200 text-green-800"
-                    : "bg-red-200 text-red-800"
-                }`}
-              >
-                {selectedData.approved === null
-                  ? "Waiting Approval"
-                  : selectedData.approved
-                  ? "On Time"
-                  : "Late"}
-              </span>
-            </div>
-
-            {/* Info */}
-            <div className="grid grid-cols-2 gap-4 mb-4 border rounded p-4">
-              <div>
-                <p className="text-sm text-gray-500">Date</p>
-                <p className="font-semibold">1 March 2025</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Check In</p>
-                <p className="font-semibold">{selectedData.clockIn}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Check Out</p>
-                <p className="font-semibold">{selectedData.clockOut}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Status</p>
-                <p className="font-semibold">
-                  {selectedData.approved === null
-                    ? "Pending"
-                    : selectedData.approved
-                    ? "Present"
-                    : "Absent"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Work Hours</p>
-                <p className="font-semibold">{selectedData.workHours}</p>
-              </div>
-            </div>
-
-            {/* Location */}
-            <div className="border rounded p-4 mb-4">
-              <h3 className="font-semibold mb-2">Location Information</h3>
-              <p>
-                <strong>Location:</strong> Office
-              </p>
-              <p>
-                <strong>Detail Address:</strong> Jln. Soekarno Hatta No. 8, Jatimulyo,
-                Lowokwaru, Kota Malang.
-              </p>
-              <p>
-                <strong>Lat:</strong> -2241720016
-              </p>
-              <p>
-                <strong>Long:</strong> 2241720119
-              </p>
-            </div>
-
-            {/* Proof */}
-            <div className="border rounded p-4">
-              <h3 className="font-semibold mb-2">Proof of Attendance</h3>
-              <div className="flex items-center gap-2">
-                <span>Wa003198373738.img</span>
-                <button className="text-blue-600 hover:underline text-sm">
-                  Download
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <DetailsModal
+          isOpen={isDetailsOpen}
+          selectedData={selectedData}
+          closeModal={closeDetailsModal}
+        />
       )}
     </div>
   );

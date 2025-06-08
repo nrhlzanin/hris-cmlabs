@@ -1,4 +1,4 @@
-"use client"
+'use client'
 import { useSidebar } from "@/components/ui/sidebar"
 import * as React from "react"
 import Image from "next/image"
@@ -18,7 +18,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// Modified data structure
 const data = {
   title: "HRIS",
   navMain: [
@@ -29,13 +28,13 @@ const data = {
       isActive: true,
     },
     {
-      title: "Employee Database", 
+      title: "Employee Database",
       url: "/admin/employee",
       icon: Users,
     },
     {
       title: "Checkclock",
-      url: "/admin/checkclock", 
+      url: "/admin/checkclock",
       icon: Clock,
     },
     {
@@ -53,13 +52,13 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { state } = useSidebar()
-  
+
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" {...props} className="lg:w-64 w-full">
       <SidebarHeader>
         <div className="p-4 flex items-center justify-center">
           <Image
-            src="/img/logo/Logo HRIS-1.png"  // Always use Vector HRIS.png
+            src="/img/logo/Logo HRIS-1.png"
             alt="HRIS Logo"
             width={40}
             height={40}
