@@ -30,7 +30,7 @@ const data = {
     },
     {
       title: "Employee Database", 
-      url: "/admin/employee",
+      url: "/admin/employee/employee-database",
       icon: Users,
     },
     {

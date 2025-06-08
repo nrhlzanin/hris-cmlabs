@@ -1,13 +1,13 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\EmployeeController;
-use App\Http\Controllers\Api\CheckClockController;
-use App\Http\Controllers\Api\CheckClockSettingController;
-use App\Http\Controllers\Api\CheckClockSettingTimeController;
-use App\Http\Controllers\Api\LetterFormatController;
-use App\Http\Controllers\Api\LetterController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\CheckClockController;
+use App\Http\Controllers\CheckClockSettingController;
+use App\Http\Controllers\CheckClockSettingTimeController;
+use App\Http\Controllers\LetterFormatController;
+use App\Http\Controllers\LetterController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -31,6 +31,8 @@ Route::middleware('auth:sanctum')->group(function () {
     ]);
     Route::post('/employees/{nik}/avatar', [EmployeeController::class, 'uploadAvatar']);
     Route::get('/employees-export', [EmployeeController::class, 'export']);
+    Route::post('employees/import', [EmployeeController::class, 'import']);
+    Route::get('employees/template/download', [EmployeeController::class, 'downloadTemplate']);
     
     // Check Clock routes (All authenticated users)
     Route::prefix('check-clock')->group(function () {

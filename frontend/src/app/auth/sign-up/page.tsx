@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import SignUpForm from "../../components/auth/signupform";
+import SignUpForm from "@/app/components/auth/signupform";
 
 export default function SignUpPage() {
   const [isMounted, setIsMounted] = useState(false);
