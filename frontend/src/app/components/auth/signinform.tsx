@@ -58,10 +58,9 @@ export default function SignInForm() {
                 const storage = rememberMe ? localStorage : sessionStorage;
                 storage.setItem('auth_token', result.data.token);
                 storage.setItem('user_data', JSON.stringify(result.data.user));
-                
-                // Redirect based on user role
+                  // Redirect based on user role
                 if (result.data.user.role === 'super_admin' || result.data.user.role === 'admin') {
-                    router.push('/admin');
+                    router.push('/admin/dashboard');
                 } else {
                     router.push('/user');
                 }

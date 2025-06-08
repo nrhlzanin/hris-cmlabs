@@ -101,10 +101,9 @@ export default function SignUpForm() {
         // Store token and user data
         localStorage.setItem('auth_token', result.data.token);
         localStorage.setItem('user_data', JSON.stringify(result.data.user));
-        
-        // Redirect to appropriate dashboard
+          // Redirect to appropriate dashboard
         if (result.data.user.role === 'super_admin' || result.data.user.role === 'admin') {
-          router.push('/admin');
+          router.push('/admin/dashboard');
         } else {
           router.push('/user');
         }
