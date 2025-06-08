@@ -13,7 +13,7 @@ export default function AddCheckboxPage() {
   return (
     <div className="min-h-screen bg-background">
       <AdminNavbar />
-      
+
       <div className="p-6">
         <div className="bg-white rounded shadow p-6 max-w-5xl mx-auto">
           <h2 className="text-2xl font-semibold mb-4">Add Checkbox</h2>
