@@ -231,44 +231,57 @@ export default function Home() {
                   Upgrade Plan
                 </Link>
               </div>
-            </div>
-
-            {/* Seat Cards */}
+            </div>            {/* Seat Cards */}
             <div id="seatCards" className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-6 hidden">
             <div className="bg-gradient-to-l from-[#1D395E] to-[#3C77C4] text-white rounded-xl shadow-lg p-8">
               <h3 className="text-2xl font-semibold text-left">Standard Seat</h3>
-              <p className="text-4xl font-bold text-left">$5 <span className="text-lg">/seat</span></p>
+              <p className="text-4xl font-bold text-left">Rp 5.000 <span className="text-lg">/seat</span></p>
               <hr className="border-t-2 border-white my-4" />
               <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
                 <li>Basic access</li>
                 <li>Time tracking</li>
                 <li>Email support</li>
               </ul>
-              <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Select Seat</button>
+              <button 
+                onClick={() => window.location.href = '/plans/choose-seats/standard'}
+                className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition"
+              >
+                Select Seat
+              </button>
             </div>
 
             <div className="bg-[#2E2E3A] text-white rounded-xl shadow-lg p-8">
               <h3 className="text-2xl font-semibold text-left">Premium Seat</h3>
-              <p className="text-4xl font-bold text-left">$10 <span className="text-lg">/seat</span></p>
+              <p className="text-4xl font-bold text-left">Rp 10.000 <span className="text-lg">/seat</span></p>
               <hr className="border-t-2 border-white my-4" />
               <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
                 <li>Advanced access</li>
                 <li>Priority support</li>
                 <li>Detailed reports</li>
               </ul>
-              <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Select Seat</button>
+              <button 
+                onClick={() => window.location.href = '/plans/choose-seats/premium'}
+                className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition"
+              >
+                Select Seat
+              </button>
             </div>
 
             <div className="bg-gradient-to-l from-[#7CA5BF] to-[#3A4D59] text-white rounded-xl shadow-lg p-8">
               <h3 className="text-2xl font-semibold text-left">Enterprise Seat</h3>
-              <p className="text-4xl font-bold text-left">$15 <span className="text-lg">/seat</span></p>
+              <p className="text-4xl font-bold text-left">Rp 15.000 <span className="text-lg">/seat</span></p>
               <hr className="border-t-2 border-white my-4" />
               <ul className="mt-6 text-sm text-left list-disc list-inside space-y-2">
                 <li>Full feature access</li>
                 <li>Dedicated support</li>
                 <li>Custom integrations</li>
               </ul>
-              <button className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition">Select Seat</button>
+              <button 
+                onClick={() => window.location.href = '/plans/choose-seats/enterprise'}
+                className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition"
+              >
+                Select Seat
+              </button>
             </div>
           </div>
           </div>
