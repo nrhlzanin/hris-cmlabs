@@ -1,21 +1,42 @@
 'use client';
 import React, { useState } from 'react';
+import { formatJakartaDate } from '@/lib/timezone';
 
-const lettersData = [
+// Define the letter type
+type Letter = {
+  id: number;
+  name: string;
+  letterName: string;
+  letterType: string;
+  validUntil: string;
+  status: string;
+  history: Array<{
+    date: string;
+    status: string;
+    description: string;
+  }>;
+};
+
+// Updated letters data with Jakarta timezone formatting
+const lettersData: Letter[] = [
   {
     id: 1,
     name: 'Puma Pumi',
     letterName: 'Surat Sakit',
     letterType: 'Absensi',
-    validUntil: '17 March 2023',
+    validUntil: formatJakartaDate(new Date('2023-03-17'), {
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric'
+    }) + ' WIB',
     status: 'Waiting Reviewed',
     history: [
-      { date: 'August, 15 2025', status: 'Waiting Reviewed', description: 'Sakit Hati Pak' },
-      { date: 'August, 10 2025', status: 'Done', description: '' },
-      { date: 'August, 05 2025', status: 'Decline', description: '' },
-      { date: 'July, 19 2025', status: 'Accepted', description: '' },
-      { date: 'June, 20 2025', status: '', description: '' },
-      { date: 'September, 30 2024', status: '', description: '' },
+      { date: formatJakartaDate(new Date('2025-08-15'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: 'Waiting Reviewed', description: 'Sakit Hati Pak' },
+      { date: formatJakartaDate(new Date('2025-08-10'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: 'Done', description: '' },
+      { date: formatJakartaDate(new Date('2025-08-05'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: 'Decline', description: '' },
+      { date: formatJakartaDate(new Date('2025-07-19'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: 'Accepted', description: '' },
+      { date: formatJakartaDate(new Date('2025-06-20'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: '', description: '' },
+      { date: formatJakartaDate(new Date('2024-09-30'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: '', description: '' },
     ],
   },
   {
@@ -23,7 +44,11 @@ const lettersData = [
     name: 'Dika Dikut',
     letterName: 'Surat Sakit',
     letterType: 'Absensi',
-    validUntil: '17 March 2023',
+    validUntil: formatJakartaDate(new Date('2023-03-17'), {
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric'
+    }) + ' WIB',
     status: 'Approved',
     history: [],
   },
@@ -32,14 +57,18 @@ const lettersData = [
     name: 'Anin Pulu-Pulu',
     letterName: 'Surat Sakit',
     letterType: 'Absensi',
-    validUntil: '17 March 2023',
+    validUntil: formatJakartaDate(new Date('2023-03-17'), {
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric'
+    }) + ' WIB',
     status: 'Decline',
     history: [],
   },
 ];
 
 export default function LettersOverview() {
-  const [selectedLetter, setSelectedLetter] = useState(null);
+  const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showLetterModal, setShowLetterModal] = useState(false);
   const [showTypeModal, setShowTypeModal] = useState(false);
@@ -55,6 +84,9 @@ export default function LettersOverview() {
         {/* HEADER */}
         <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
           <h1 className="text-xl font-bold">Letters Overview</h1>
+          <div className="text-sm text-gray-600">
+            All dates shown in Jakarta timezone (WIB)
+          </div>
           <div className="flex gap-2 flex-wrap">
             <input
               type="text"
@@ -122,7 +154,7 @@ export default function LettersOverview() {
                 ))
               ) : (
                 <tr>
-                  <td className="px-4 py-4 text-center text-gray-500" colSpan="6">No matching data found.</td>
+                  <td className="px-4 py-4 text-center text-gray-500" colSpan={6}>No matching data found.</td>
                 </tr>
               )}
             </tbody>

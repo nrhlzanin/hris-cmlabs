@@ -97,7 +97,7 @@ class ApiService {
     }
   }
 
-  async getAttendanceRecords(params?: any) {
+  async getAttendanceRecords(params?: Record<string, string>) {
     try {
       const queryString = params ? new URLSearchParams(params).toString() : '';
       const response = await fetch(`${API_BASE_URL}/api/check-clock?${queryString}`, {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CheckClock;
 use App\Models\CheckClockSetting;
+use App\Helpers\TimezoneHelper;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
@@ -118,7 +119,7 @@ class CheckClockController extends Controller
         if ($existingClockIn) {
             return response()->json([
                 'success' => false,
-                'message' => 'You have already clocked in today at ' . Carbon::parse($existingClockIn->check_clock_time)->format('H:i:s')
+                'message' => 'You have already clocked in today at ' . \App\Helpers\TimezoneHelper::formatJakartaTime($existingClockIn->check_clock_time, 'H:i:s') . ' WIB'
             ], 400);
         }
 
@@ -201,7 +202,7 @@ class CheckClockController extends Controller
         if ($existingClockOut) {
             return response()->json([
                 'success' => false,
-                'message' => 'You have already clocked out today at ' . Carbon::parse($existingClockOut->check_clock_time)->format('H:i:s')
+                'message' => 'You have already clocked out today at ' . \App\Helpers\TimezoneHelper::formatJakartaTime($existingClockOut->check_clock_time, 'H:i:s') . ' WIB'
             ], 400);
         }
 
@@ -284,7 +285,7 @@ class CheckClockController extends Controller
         if ($breakStart) {
             return response()->json([
                 'success' => false,
-                'message' => 'You are already on break since ' . Carbon::parse($breakStart->check_clock_time)->format('H:i:s')
+                'message' => 'You are already on break since ' . \App\Helpers\TimezoneHelper::formatJakartaTime($breakStart->check_clock_time, 'H:i:s') . ' WIB'
             ], 400);
         }
 
@@ -348,7 +349,7 @@ class CheckClockController extends Controller
         if ($breakEnd) {
             return response()->json([
                 'success' => false,
-                'message' => 'Break already ended at ' . Carbon::parse($breakEnd->check_clock_time)->format('H:i:s')
+                'message' => 'Break already ended at ' . \App\Helpers\TimezoneHelper::formatJakartaTime($breakEnd->check_clock_time, 'H:i:s') . ' WIB'
             ], 400);
         }
 
@@ -473,7 +474,7 @@ class CheckClockController extends Controller
      */
     private function getTodayStatus(int $userId): array
     {
-        $today = now()->format('Y-m-d');
+        $today = TimezoneHelper::getJakartaDate();
         
         $clockIn = CheckClock::byUser($userId)->today()->clockIn()->first();
         $clockOut = CheckClock::byUser($userId)->today()->clockOut()->first();
@@ -499,17 +500,13 @@ class CheckClockController extends Controller
 
         return [
             'date' => $today,
-            'formatted_date' => now()->format('l, F j, Y'),
-            'clock_in' => $clockIn ? Carbon::parse($clockIn->check_clock_time)->format('H:i:s') : null,
-            'clock_out' => $clockOut ? Carbon::parse($clockOut->check_clock_time)->format('H:i:s') : null,
-            'break_start' => $breakStart ? Carbon::parse($breakStart->check_clock_time)->format('H:i:s') : null,
-            'break_end' => $breakEnd ? Carbon::parse($breakEnd->check_clock_time)->format('H:i:s') : null,
+            'formatted_date' => TimezoneHelper::formatJakartaDate(now(), 'l, F j, Y'),
+            'clock_in' => $clockIn ? TimezoneHelper::formatJakartaTime($clockIn->check_clock_time, 'H:i:s') . ' WIB' : null,
+            'clock_out' => $clockOut ? TimezoneHelper::formatJakartaTime($clockOut->check_clock_time, 'H:i:s') . ' WIB' : null,
             'work_hours' => $workHours,
             'status' => $status,
-            'can_clock_in' => !$clockIn,
-            'can_clock_out' => $clockIn && !$clockOut,
-            'can_break_start' => $clockIn && !$clockOut && !$breakStart,
-            'can_break_end' => $breakStart && !$breakEnd
+            'break_start' => $breakStart ? TimezoneHelper::formatJakartaTime($breakStart->check_clock_time, 'H:i:s') . ' WIB' : null,
+            'break_end' => $breakEnd ? TimezoneHelper::formatJakartaTime($breakEnd->check_clock_time, 'H:i:s') . ' WIB' : null,
         ];
     }
 

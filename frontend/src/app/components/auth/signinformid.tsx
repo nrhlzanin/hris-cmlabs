@@ -18,9 +18,7 @@ export default function SignInFormId() {
   });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    let newErrors = {
+    e.preventDefault();        const newErrors = {
       username: "",
       nik: "",
       password: "",

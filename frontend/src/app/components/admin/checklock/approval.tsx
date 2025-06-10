@@ -1,9 +1,16 @@
 import React from "react";
-import { FaArrowLeft } from "react-icons/fa";
 
 interface ApprovalModalProps {
   isOpen: boolean;
-  selectedData: any;
+  selectedData: {
+    id: number;
+    name: string;
+    position: string;
+    clockIn: string;
+    clockOut: string;
+    workHours: string;
+    approved: boolean | null;
+  };
   handleApprove: () => void;
   handleReject: () => void;
   closeModal: () => void;
@@ -29,9 +36,8 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
                 Approve Attendance
-              </h2>
-              <p className="text-sm text-gray-600 mt-2">
-                Are you sure you want to approve {selectedData.name}'s
+              </h2>              <p className="text-sm text-gray-600 mt-2">
+                Are you sure you want to approve {selectedData.name}&apos;s
                 attendance? This action cannot be undone.
               </p>
             </div>

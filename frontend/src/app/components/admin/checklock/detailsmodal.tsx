@@ -3,7 +3,16 @@ import { FaDownload, FaEye, FaEyeSlash, FaTimes } from "react-icons/fa";
 
 interface DetailsModalProps {
   isOpen: boolean;
-  selectedData: any;
+  selectedData: {
+    id: number;
+    name: string;
+    position: string;
+    clockIn: string;
+    clockOut: string;
+    workHours: string;
+    approved: boolean | null;
+    fileName?: string;
+  };
   closeModal: () => void;
 }
 

@@ -86,7 +86,7 @@ class AuthService {
       'Content-Type': 'application/json',
     };
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private async makeRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
     const url = `${API_BASE_URL}/api${endpoint}`;
     
