@@ -1,0 +1,5 @@
+<!-- SVG for GoPay -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 32" width="48" height="32">
+  <rect width="48" height="32" fill="#00AA13" rx="4"/>
+  <text x="24" y="20" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="white" text-anchor="middle">GoPay</text>
+</svg>
