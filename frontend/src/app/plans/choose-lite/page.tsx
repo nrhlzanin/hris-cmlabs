@@ -80,7 +80,7 @@ export default function ChoosePackagePage() {
                   billingPeriod === 'yearly' ? "bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
                 }`}
               >
-                Yearly - Rp {plan?.price.yearly?.toLocaleString('id-ID') || '200.000'} / User
+                Yearly - Rp {plan?.price.yearly?.toLocaleString('id-ID') || '20.000'} / User
               </button>
               <button
                 onClick={() => setBillingPeriod('monthly')}
@@ -88,7 +88,7 @@ export default function ChoosePackagePage() {
                   billingPeriod === 'monthly' ? "bg-blue-700" : "bg-blue-500 hover:bg-blue-600"
                 }`}
               >
-                Monthly - Rp {plan?.price.monthly?.toLocaleString('id-ID') || '250.000'} / User
+                Monthly - Rp {plan?.price.monthly?.toLocaleString('id-ID') || '25.000'} / User
               </button>
             </div>
 
@@ -108,27 +108,43 @@ export default function ChoosePackagePage() {
                   <span className="ml-2">{size}</span>
                 </label>
               ))}
-            </div>
-
-            {/* Employee Count */}
+            </div>            {/* Employee Count */}
             <div className="flex items-center justify-between mb-10">
-              <h2 className="font-semibold">Number of Employees</h2>
+              <div>
+                <h2 className="font-semibold">Number of Employees</h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  Minimum: {parseInt(teamSize.split("-")[0].trim())} employees
+                </p>
+              </div>
               <div className="flex items-center">
-                <button
-                  onClick={() =>
-                    setEmployeeCount((prev) => Math.max(prev - 1, parseInt(teamSize.split("-")[0])))
-                  }
-                  className="bg-gray-200 px-3 py-1 text-lg font-bold rounded w-10 h-10"
-                >
-                  -
-                </button>
-                <span className="w-12 text-center mx-2 text-lg font-semibold">{employeeCount}</span>
-                <button
-                  onClick={() => setEmployeeCount((prev) => prev + 1)}
-                  className="bg-gray-200 px-3 py-1 text-lg font-bold rounded w-10 h-10"
-                >
-                  +
-                </button>
+                <input
+                  type="number"
+                  value={employeeCount === 0 ? '' : employeeCount}                  onChange={(e) => {
+                    const value = e.target.value === '' ? 0 : parseInt(e.target.value);
+                    const minEmployees = parseInt(teamSize.split("-")[0].trim());
+                    const maxEmployees = 9999999; // 7 digits max
+                    
+                    // Allow typing but enforce maximum
+                    if (value >= 0 && value <= maxEmployees) {
+                      setEmployeeCount(value);
+                    }
+                  }}                  onBlur={(e) => {
+                    // Enforce minimum and maximum value on blur
+                    const value = parseInt(e.target.value) || 0;
+                    const minEmployees = parseInt(teamSize.split("-")[0].trim());
+                    const maxEmployees = 9999999; // 7 digits max
+                    
+                    if (value < minEmployees) {
+                      setEmployeeCount(minEmployees);
+                    } else if (value > maxEmployees) {
+                      setEmployeeCount(maxEmployees);
+                    }
+                  }}                  min={parseInt(teamSize.split("-")[0].trim())}
+                  max={9999999}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-md text-center text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                  placeholder={parseInt(teamSize.split("-")[0].trim()).toString()}
+                />
+                <span className="ml-2 text-sm text-gray-500">employees</span>
               </div>
             </div>
           </div>

@@ -4,6 +4,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { PAYMENT_METHODS, PACKAGE_PLANS, CURRENCIES, TAX_RATE } from '../config';
 import { PaymentMethod, BillingInfo, CartItem, PaymentData } from '../types';
+import {
+  SuccessPopup,
+  ErrorPopup,
+  ValidationPopup,
+  LoadingPopup,
+  ConfirmationPopup,
+  WarningPopup,
+  InfoPopup,
+} from '@/components/ui/popups';
 
 export default function PaymentPage() {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
@@ -24,14 +33,27 @@ export default function PaymentPage() {
   const [cartItem, setCartItem] = useState<CartItem | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Popup states
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [showErrorPopup, setShowErrorPopup] = useState(false);
+  const [showValidationPopup, setShowValidationPopup] = useState(false);
+  const [showLoadingPopup, setShowLoadingPopup] = useState(false);
+  const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
+  const [showWarningPopup, setShowWarningPopup] = useState(false);
+  const [showInfoPopup, setShowInfoPopup] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [paymentData, setPaymentData] = useState<any>(null);
+
   // Load cart data from localStorage or URL params
   useEffect(() => {
     // Try to get cart data from localStorage (from choose-lite/choose-pro pages)
-    const savedCartData = localStorage.getItem('hris-cart-data');
+    const savedCartData = localStorage.getItem('cartData');
     if (savedCartData) {
       try {
         const cartData = JSON.parse(savedCartData);
-        setCartItem(cartData);
+        // Handle array format (legacy) or single item
+        const cartItem = Array.isArray(cartData) ? cartData[0] : cartData;
+        setCartItem(cartItem);
       } catch (error) {
         console.error('Error parsing cart data:', error);
         // Fall back to URL params or mock data
@@ -49,6 +71,8 @@ export default function PaymentPage() {
         if (plan) {
           const quantity = employeeCount ? parseInt(employeeCount) : 1;
           const unitPrice = billingPeriod === 'yearly' ? plan.price.yearly : plan.price.monthly;
+          const subtotal = unitPrice * quantity;
+          const tax = Math.round(subtotal * TAX_RATE);
           const cartData: CartItem = {
             planId: plan.id,
             planName: plan.name,
@@ -56,7 +80,7 @@ export default function PaymentPage() {
             billingPeriod: billingPeriod || 'monthly',
             quantity,
             unitPrice,
-            totalPrice: unitPrice * quantity,
+            totalPrice: subtotal + tax,
           };
           setCartItem(cartData);
         } else {
@@ -76,8 +100,8 @@ export default function PaymentPage() {
       planType: 'package',
       billingPeriod: 'monthly',
       quantity: 1,
-      unitPrice: 15,
-      totalPrice: 15,
+      unitPrice: 25000,
+      totalPrice: 27750, // Including 11% tax (25000 * 1.11)
     };
     setCartItem(mockCartItem);
   };
@@ -113,62 +137,155 @@ export default function PaymentPage() {
   };
 
   const calculateTotals = () => {
-    if (!cartItem) return { subtotal: 0, tax: 0, total: 0 };
+    if (!cartItem) return { subtotal: 0, tax: 0, total: 0, processingFee: 0, finalTotal: 0 };
     
-    const subtotal = cartItem.totalPrice;
-    const tax = subtotal * TAX_RATE;
-    const total = subtotal + tax;
+    // cartItem.totalPrice already includes tax from choose pages
+    const total = cartItem.totalPrice;
+    const subtotal = Math.round(total / (1 + TAX_RATE));
+    const tax = total - subtotal;
     
-    return { subtotal, tax, total };
+    // Add processing fee if payment method is selected
+    const selectedPaymentMethodData = PAYMENT_METHODS.find(method => method.id === selectedPaymentMethod);
+    const processingFee = selectedPaymentMethodData?.processing_fee || 0;
+    const finalTotal = total + processingFee;
+    
+    return { subtotal, tax, total, processingFee, finalTotal };
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm() || !cartItem) return;
+    // First validate the form and show validation popup if errors exist
+    if (!validateForm() || !cartItem) {
+      const errorList: string[] = [];
+      
+      if (!billingInfo.firstName.trim()) errorList.push("First name is required");
+      if (!billingInfo.lastName.trim()) errorList.push("Last name is required");
+      if (!billingInfo.email.trim()) errorList.push("Email address is required");
+      if (!billingInfo.phone.trim()) errorList.push("Phone number is required");
+      if (!billingInfo.address.trim()) errorList.push("Address is required");
+      if (!billingInfo.city.trim()) errorList.push("City is required");
+      if (!billingInfo.state.trim()) errorList.push("State/Province is required");
+      if (!billingInfo.zipCode.trim()) errorList.push("ZIP/Postal code is required");
+      if (!selectedPaymentMethod) errorList.push("Please select a payment method");
+      
+      if (billingInfo.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(billingInfo.email)) {
+        errorList.push("Please enter a valid email address");
+      }
+      
+      setValidationErrors(errorList);
+      setShowValidationPopup(true);
+      return;
+    }
 
+    const selectedMethod = PAYMENT_METHODS.find(method => method.id === selectedPaymentMethod);
+    const totals = calculateTotals();
+    
+    // Set payment data for confirmation popup
+    setPaymentData({
+      planName: cartItem.planName,
+      quantity: cartItem.planType === 'seat' ? `${cartItem.quantity} seats` : `${cartItem.quantity} employees`,
+      total: `Rp ${totals.finalTotal.toLocaleString('id-ID')}`,
+      paymentMethod: selectedMethod?.name || 'Unknown Method'
+    });
+
+    // Show confirmation popup before processing payment
+    setShowConfirmationPopup(true);
+  };
+
+  // Function to actually process the payment after confirmation
+  const processPayment = () => {
+    setShowConfirmationPopup(false);
+    setShowLoadingPopup(true);
+    setIsProcessing(true);
+    
     const paymentData: PaymentData = {
       paymentMethodId: selectedPaymentMethod,
       billingInfo,
-      cartItem,
-      totalAmount: calculateTotals().total,
-      currency: 'USD',
+      cartItem: cartItem!,
+      totalAmount: calculateTotals().finalTotal,
+      currency: 'IDR',
     };
 
     console.log('Processing payment:', paymentData);
     
-    // Simulate payment processing
-    setIsProcessing(true);
-    
-    // Here you would integrate with your payment processor
+    // Simulate payment processing with different outcomes
     setTimeout(() => {
+      setShowLoadingPopup(false);
       setIsProcessing(false);
       
-      // Create order data for confirmation page
-      const orderData = {
-        cartItems: [cartItem],
-        paymentData: {
-          paymentMethod: selectedPaymentMethodData?.name || 'Credit Card',
-          billingInfo
-        },
-        orderId: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
-        totalAmount: calculateTotals().total
-      };
+      // Simulate random success/failure for demo (90% success rate)
+      const isSuccess = Math.random() > 0.1;
       
-      // Store order data for confirmation page
-      localStorage.setItem('completedOrder', JSON.stringify(orderData));
-      
-      // Clear cart data
-      localStorage.removeItem('cartData');
-      localStorage.removeItem('selectedPlan');
-      
-      // Redirect to confirmation page
-      window.location.href = '/plans/confirmation';
-    }, 2000); // Simulate 2 second processing time
+      if (isSuccess) {
+        // Success: Create order data for confirmation page
+        const selectedPaymentMethodData = PAYMENT_METHODS.find(method => method.id === selectedPaymentMethod);
+        const orderData = {
+          cartItems: [cartItem!],
+          paymentData: {
+            paymentMethod: selectedPaymentMethodData?.name || 'Credit Card',
+            billingInfo
+          },
+          orderId: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+          totalAmount: calculateTotals().finalTotal
+        };
+        
+        // Store order data for confirmation page
+        localStorage.setItem('completedOrder', JSON.stringify(orderData));
+        
+        // Clear cart data
+        localStorage.removeItem('cartData');
+        localStorage.removeItem('selectedPlan');
+        
+        // Show success popup with order details
+        setPaymentData({
+          ...paymentData,
+          orderId: orderData.orderId,
+          amount: `Rp ${orderData.totalAmount.toLocaleString('id-ID')}`
+        });
+        setShowSuccessPopup(true);
+      } else {
+        // Error: Show error popup
+        setShowErrorPopup(true);
+      }
+    }, 3000); // Simulate 3 second processing time
+  };
+
+  // Popup event handlers
+  const handleSuccessPopupContinue = () => {
+    setShowSuccessPopup(false);
+    // Navigate to confirmation page
+    window.location.href = '/plans/confirmation';
+  };
+
+  const handleErrorPopupRetry = () => {
+    setShowErrorPopup(false);
+    // Allow user to try payment again
+    processPayment();
+  };
+
+  const handleErrorPopupCancel = () => {
+    setShowErrorPopup(false);
+    // User can modify their information and try again
+  };
+
+  const handleValidationPopupClose = () => {
+    setShowValidationPopup(false);
+    // Clear validation errors
+    setValidationErrors([]);
+  };
+
+  // Demo functions for testing other popups
+  const showWarningDemo = () => {
+    setShowWarningPopup(true);
+  };
+
+  const showInfoDemo = () => {
+    setShowInfoPopup(true);
   };
 
   const selectedPaymentMethodData = PAYMENT_METHODS.find(method => method.id === selectedPaymentMethod);
-  const { subtotal, tax, total } = calculateTotals();
+  const { subtotal, tax, total, processingFee, finalTotal } = calculateTotals();
 
   if (!cartItem) {
     return (
@@ -418,21 +535,27 @@ export default function PaymentPage() {
                           />
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center">
-                              <div className="w-8 h-8 mr-3 bg-gray-100 rounded flex items-center justify-center">
+                              <div className="w-12 h-8 mr-3 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
                                 {method.logo ? (
                                   <Image
                                     src={method.logo}
                                     alt={method.name}
-                                    width={32}
+                                    width={48}
                                     height={32}
                                     className="w-full h-full object-contain"
                                     onError={(e) => {
-                                      // Fallback to text if image fails to load
-                                      (e.target as HTMLImageElement).style.display = 'none';
+                                      // Hide image and show fallback text
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const fallbackSpan = target.nextElementSibling as HTMLElement;
+                                      if (fallbackSpan) fallbackSpan.style.display = 'block';
                                     }}
                                   />
                                 ) : null}
-                                <span className="text-xs font-medium text-gray-600">
+                                <span 
+                                  className="text-xs font-medium text-gray-600"
+                                  style={{ display: method.logo ? 'none' : 'block' }}
+                                >
                                   {method.name.substring(0, 4).toUpperCase()}
                                 </span>
                               </div>
@@ -472,20 +595,27 @@ export default function PaymentPage() {
                           />
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center">
-                              <div className="w-8 h-8 mr-3 bg-blue-100 rounded flex items-center justify-center">
+                              <div className="w-12 h-8 mr-3 bg-blue-100 rounded flex items-center justify-center overflow-hidden">
                                 {method.logo ? (
                                   <Image
                                     src={method.logo}
                                     alt={method.name}
-                                    width={32}
+                                    width={48}
                                     height={32}
                                     className="w-full h-full object-contain"
                                     onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
+                                      // Hide image and show fallback text
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const fallbackSpan = target.nextElementSibling as HTMLElement;
+                                      if (fallbackSpan) fallbackSpan.style.display = 'block';
                                     }}
                                   />
                                 ) : null}
-                                <span className="text-xs font-medium text-blue-600">
+                                <span 
+                                  className="text-xs font-medium text-blue-600"
+                                  style={{ display: method.logo ? 'none' : 'block' }}
+                                >
                                   {method.name.substring(0, 3).toUpperCase()}
                                 </span>
                               </div>
@@ -532,20 +662,27 @@ export default function PaymentPage() {
                           />
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center">
-                              <div className="w-8 h-8 mr-3 bg-green-100 rounded flex items-center justify-center">
+                              <div className="w-12 h-8 mr-3 bg-green-100 rounded flex items-center justify-center overflow-hidden">
                                 {method.logo ? (
                                   <Image
                                     src={method.logo}
                                     alt={method.name}
-                                    width={32}
+                                    width={48}
                                     height={32}
                                     className="w-full h-full object-contain"
                                     onError={(e) => {
-                                      (e.target as HTMLImageElement).style.display = 'none';
+                                      // Hide image and show fallback text
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      const fallbackSpan = target.nextElementSibling as HTMLElement;
+                                      if (fallbackSpan) fallbackSpan.style.display = 'block';
                                     }}
                                   />
                                 ) : null}
-                                <span className="text-xs font-medium text-green-600">
+                                <span 
+                                  className="text-xs font-medium text-green-600"
+                                  style={{ display: method.logo ? 'none' : 'block' }}
+                                >
                                   {method.name.substring(0, 3).toUpperCase()}
                                 </span>
                               </div>
@@ -553,7 +690,7 @@ export default function PaymentPage() {
                                 <span className="text-sm font-medium text-gray-900 block">{method.name}</span>
                                 {method.processing_fee && (
                                   <span className="text-xs text-gray-500">
-                                    Processing fee: Rp {method.processing_fee.toLocaleString()}
+                                    Processing fee: Rp {method.processing_fee.toLocaleString('id-ID')}
                                   </span>
                                 )}
                               </div>
@@ -590,7 +727,7 @@ export default function PaymentPage() {
                       Processing Payment...
                     </div>
                   ) : (
-                    `Complete Payment - $${total.toFixed(2)}`
+                    `Complete Payment - Rp ${finalTotal.toLocaleString('id-ID')}`
                   )}
                 </button>
                 <p className="text-sm text-gray-500 text-center mt-3">
@@ -610,17 +747,20 @@ export default function PaymentPage() {
                   <div>
                     <h3 className="font-medium text-gray-900">{cartItem.planName}</h3>
                     <p className="text-sm text-gray-500">
-                      {cartItem.billingPeriod} billing • {cartItem.quantity} user{cartItem.quantity > 1 ? 's' : ''}
+                      {cartItem.planType === 'seat' 
+                        ? `${cartItem.quantity} seat${cartItem.quantity > 1 ? 's' : ''} • Monthly billing`
+                        : `${cartItem.billingPeriod} billing • ${cartItem.quantity} user${cartItem.quantity > 1 ? 's' : ''}`
+                      }
                     </p>
                   </div>
-                  <span className="font-medium text-gray-900">${cartItem.totalPrice.toFixed(2)}</span>
+                  <span className="font-medium text-gray-900">Rp {Math.round(cartItem.totalPrice / (1 + TAX_RATE)).toLocaleString('id-ID')}</span>
                 </div>
 
                 {selectedPaymentMethodData?.processing_fee && (
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Processing Fee</span>
+                    <span className="text-sm text-gray-600">Processing Fee ({selectedPaymentMethodData.name})</span>
                     <span className="text-sm text-gray-900">
-                      Rp {selectedPaymentMethodData.processing_fee.toLocaleString()}
+                      Rp {selectedPaymentMethodData.processing_fee.toLocaleString('id-ID')}
                     </span>
                   </div>
                 )}
@@ -628,18 +768,24 @@ export default function PaymentPage() {
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Subtotal</span>
-                    <span className="text-sm text-gray-900">${subtotal.toFixed(2)}</span>
+                    <span className="text-sm text-gray-900">Rp {subtotal.toLocaleString('id-ID')}</span>
                   </div>
                   <div className="flex justify-between items-center mt-2">
                     <span className="text-sm text-gray-600">Tax (11%)</span>
-                    <span className="text-sm text-gray-900">${tax.toFixed(2)}</span>
+                    <span className="text-sm text-gray-900">Rp {tax.toLocaleString('id-ID')}</span>
                   </div>
+                  {processingFee > 0 && (
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-sm text-gray-600">Processing Fee</span>
+                      <span className="text-sm text-gray-900">Rp {processingFee.toLocaleString('id-ID')}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center">
                     <span className="font-semibold text-gray-900">Total</span>
-                    <span className="font-semibold text-gray-900 text-lg">${total.toFixed(2)}</span>
+                    <span className="font-semibold text-gray-900 text-lg">Rp {finalTotal.toLocaleString('id-ID')}</span>
                   </div>
                 </div>
 
@@ -647,6 +793,18 @@ export default function PaymentPage() {
                   <h4 className="font-medium text-blue-900 mb-2">What's included:</h4>
                   <ul className="text-sm text-blue-800 space-y-1">
                     <li>• All {cartItem.planName} features</li>
+                    {cartItem.planType === 'seat' ? (
+                      <>
+                        <li>• Per-seat monthly billing</li>
+                        <li>• Easy seat management</li>
+                        <li>• Flexible scaling</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>• {cartItem.billingPeriod === 'yearly' ? 'Annual billing discount' : 'Monthly flexibility'}</li>
+                        <li>• Support for {cartItem.quantity} employee{cartItem.quantity > 1 ? 's' : ''}</li>
+                      </>
+                    )}
                     <li>• Priority email support</li>
                     <li>• 99.9% uptime guarantee</li>
                     <li>• 30-day money back guarantee</li>
@@ -666,6 +824,80 @@ export default function PaymentPage() {
           </div>
         </div>
       </div>
+
+      {/* Popup Components */}
+      <SuccessPopup
+        isOpen={showSuccessPopup}
+        onClose={() => {
+          setShowSuccessPopup(false);
+          window.location.href = '/plans/confirmation';
+        }}
+        onConfirm={() => {
+          setShowSuccessPopup(false);
+          window.location.href = '/plans/confirmation';
+        }}
+        title="Payment Successful!"
+        message="Your payment has been processed successfully. Thank you for upgrading your HRIS plan!"
+        confirmText="View Details"
+        data={paymentData}
+      />
+
+      <ErrorPopup
+        isOpen={showErrorPopup}
+        onClose={() => setShowErrorPopup(false)}
+        onConfirm={() => {
+          setShowErrorPopup(false);
+          // Allow user to try again
+        }}
+        title="Payment Failed"
+        message="We're sorry, but your payment could not be processed. Please check your payment details and try again."
+        confirmText="Try Again"
+        cancelText="Cancel"
+      />
+
+      <ValidationPopup
+        isOpen={showValidationPopup}
+        onClose={() => setShowValidationPopup(false)}
+        title="Missing Required Information"
+        message="Please fill in all required fields before proceeding with your payment."
+        confirmText="OK"
+        errors={validationErrors}
+      />
+
+      <LoadingPopup
+        isOpen={showLoadingPopup}
+        title="Processing Payment"
+        message="Please wait while we securely process your payment. This may take a few seconds..."
+      />
+
+      <ConfirmationPopup
+        isOpen={showConfirmationPopup}
+        onClose={() => setShowConfirmationPopup(false)}
+        onConfirm={processPayment}
+        title="Confirm Payment"
+        message="Please review your order details and confirm your payment."
+        confirmText="Confirm Payment"
+        cancelText="Cancel"
+        data={paymentData}
+      />
+
+      <WarningPopup
+        isOpen={showWarningPopup}
+        onClose={() => setShowWarningPopup(false)}
+        onConfirm={() => setShowWarningPopup(false)}
+        title="Warning"
+        message="Please review your information before proceeding."
+        confirmText="Continue"
+        cancelText="Cancel"
+      />
+
+      <InfoPopup
+        isOpen={showInfoPopup}
+        onClose={() => setShowInfoPopup(false)}
+        title="Information"
+        message="Here's some important information for you."
+        confirmText="OK"
+      />
     </div>
   );
 }

@@ -29,9 +29,7 @@ export default function PricingPage() {
     };
 
     // Store plan data for the selection pages
-    localStorage.setItem("selectedPlan", JSON.stringify(planData));
-
-    // Navigate to appropriate selection page
+    localStorage.setItem("selectedPlan", JSON.stringify(planData));    // Navigate to appropriate selection page
     if (planType === "package") {
       if (plan.id === "lite") {
         window.location.href = "/plans/choose-lite";
@@ -39,8 +37,14 @@ export default function PricingPage() {
         window.location.href = "/plans/choose-pro";
       }
     } else {
-      // For seat plans, go directly to payment with seat selection
-      window.location.href = `/plans/payment?planType=seat&planId=${plan.id}`;
+      // For seat plans, navigate to seat selection pages
+      if (plan.id === "standard-seat") {
+        window.location.href = "/plans/choose-seats/standard";
+      } else if (plan.id === "premium-seat") {
+        window.location.href = "/plans/choose-seats/premium";
+      } else if (plan.id === "enterprise-seat") {
+        window.location.href = "/plans/choose-seats/enterprise";
+      }
     }
   };
 
