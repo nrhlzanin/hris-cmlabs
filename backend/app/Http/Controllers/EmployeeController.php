@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
@@ -9,7 +9,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use League\Csv\Reader;
+use League\Csv\Statement;
 
 class EmployeeController extends Controller
 {
@@ -92,12 +95,12 @@ class EmployeeController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'nik' => 'required|string|unique:employees,nik',
+            'nik' => 'required|string|size:16|unique:employees,nik',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'mobile_phone' => 'required|string|max:20',
             'gender' => 'required|in:Men,Woman',
-            'last_education' => 'required|in:high_school,SMA,SMK_Sederajat,bachelor,S1,master,S2',
+            'last_education' => 'required|in:SMA/SMK Sederajat,S1,S2',
             'place_of_birth' => 'required|string|max:255',
             'date_of_birth' => 'required|date|before:today',
             'position' => 'required|string|max:255',
@@ -120,34 +123,21 @@ class EmployeeController extends Controller
         }
 
         try {
-            $employeeData = $request->except(['avatar']);
-
+            $validatedData = $validator->validated();
+            
             // Handle avatar upload
             if ($request->hasFile('avatar')) {
                 $avatarPath = $request->file('avatar')->store('avatars', 'public');
-                $employeeData['avatar'] = $avatarPath;
+                $validatedData['avatar'] = $avatarPath;
             }
 
-            $employee = Employee::create($employeeData);
+            // Create employee
+            $employee = Employee::create($validatedData);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Employee created successfully',
-                'data' => [
-                    'employee' => [
-                        'nik' => $employee->nik,
-                        'full_name' => $employee->full_name,
-                        'first_name' => $employee->first_name,
-                        'last_name' => $employee->last_name,
-                        'mobile_phone' => $employee->mobile_phone,
-                        'gender' => $employee->gender,
-                        'position' => $employee->position,
-                        'branch' => $employee->branch,
-                        'contract_type' => $employee->contract_type,
-                        'grade' => $employee->grade,
-                        'avatar_url' => $employee->avatar_url,
-                    ]
-                ]
+                'data' => $employee->load('letterFormat')
             ], 201);
 
         } catch (\Exception $e) {
@@ -486,5 +476,262 @@ class EmployeeController extends Controller
                                  ->get()
                                  ->pluck('total', 'branch'),
         ];
+    }
+
+    /**
+     * Import employees from CSV file
+     */
+    public function import(Request $request): JsonResponse
+    {
+        // Check if user is admin or super admin
+        if (!$request->user()->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only admin or super admin can import employees'
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'file' => 'required|file|mimes:csv,txt|max:10240', // Max 10MB
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $file = $request->file('file');
+            $path = $file->getRealPath();
+            
+            // Read CSV file
+            $csv = Reader::createFromPath($path, 'r');
+            $csv->setHeaderOffset(0); // First row is header
+            
+            $records = Statement::create()->process($csv);
+            
+            $imported = 0;
+            $failed = 0;
+            $errors = [];
+            $duplicates = [];
+
+            DB::beginTransaction();
+
+            foreach ($records as $index => $record) {
+                try {
+                    // Validate required fields
+                    $requiredFields = [
+                        'nik', 'first_name', 'last_name', 'mobile_phone', 'gender',
+                        'last_education', 'place_of_birth', 'date_of_birth', 'position',
+                        'branch', 'contract_type', 'grade', 'bank', 'account_number',
+                        'acc_holder_name'
+                    ];
+
+                    $missingFields = [];
+                    foreach ($requiredFields as $field) {
+                        if (empty($record[$field])) {
+                            $missingFields[] = $field;
+                        }
+                    }
+
+                    if (!empty($missingFields)) {
+                        $failed++;
+                        $errors[] = "Row " . ($index + 2) . ": Missing required fields: " . implode(', ', $missingFields);
+                        continue;
+                    }
+
+                    // Validate NIK format (16 digits)
+                    if (!preg_match('/^\d{16}$/', $record['nik'])) {
+                        $failed++;
+                        $errors[] = "Row " . ($index + 2) . ": NIK must be exactly 16 digits";
+                        continue;
+                    }
+
+                    // Check for duplicate NIK
+                    if (Employee::where('nik', $record['nik'])->exists()) {
+                        $failed++;
+                        $duplicates[] = $record['nik'];
+                        $errors[] = "Row " . ($index + 2) . ": NIK {$record['nik']} already exists";
+                        continue;
+                    }
+
+                    // Validate enum values
+                    $validGenders = ['Men', 'Woman'];
+                    $validEducations = ['SMA/SMK Sederajat', 'S1', 'S2'];
+                    $validContractTypes = ['Permanent', 'Contract'];
+                    $validBanks = ['BCA', 'BNI', 'BRI', 'BSI', 'BTN', 'CMIB', 'Mandiri', 'Permata'];
+
+                    if (!in_array($record['gender'], $validGenders)) {
+                        $failed++;
+                        $errors[] = "Row " . ($index + 2) . ": Invalid gender. Must be: " . implode(', ', $validGenders);
+                        continue;
+                    }
+
+                    if (!in_array($record['last_education'], $validEducations)) {
+                        $failed++;
+                        $errors[] = "Row " . ($index + 2) . ": Invalid education. Must be: " . implode(', ', $validEducations);
+                        continue;
+                    }
+
+                    if (!in_array($record['contract_type'], $validContractTypes)) {
+                        $failed++;
+                        $errors[] = "Row " . ($index + 2) . ": Invalid contract type. Must be: " . implode(', ', $validContractTypes);
+                        continue;
+                    }
+
+                    if (!in_array($record['bank'], $validBanks)) {
+                        $failed++;
+                        $errors[] = "Row " . ($index + 2) . ": Invalid bank. Must be: " . implode(', ', $validBanks);
+                        continue;
+                    }
+
+                    // Validate date format
+                    $dateOfBirth = \DateTime::createFromFormat('Y-m-d', $record['date_of_birth']);
+                    if (!$dateOfBirth || $dateOfBirth >= new \DateTime()) {
+                        $failed++;
+                        $errors[] = "Row " . ($index + 2) . ": Invalid date of birth format (use YYYY-MM-DD) or date is in the future";
+                        continue;
+                    }
+
+                    // Prepare data for insertion
+                    $employeeData = [
+                        'nik' => $record['nik'],
+                        'first_name' => trim($record['first_name']),
+                        'last_name' => trim($record['last_name']),
+                        'mobile_phone' => $record['mobile_phone'],
+                        'gender' => $record['gender'],
+                        'last_education' => $record['last_education'],
+                        'place_of_birth' => trim($record['place_of_birth']),
+                        'date_of_birth' => $record['date_of_birth'],
+                        'position' => trim($record['position']),
+                        'branch' => trim($record['branch']),
+                        'contract_type' => $record['contract_type'],
+                        'grade' => trim($record['grade']),
+                        'bank' => $record['bank'],
+                        'account_number' => $record['account_number'],
+                        'acc_holder_name' => trim($record['acc_holder_name']),
+                        'letter_id' => !empty($record['letter_id']) ? $record['letter_id'] : null,
+                    ];
+
+                    // Create employee
+                    Employee::create($employeeData);
+                    $imported++;
+
+                } catch (\Exception $e) {
+                    $failed++;
+                    $errors[] = "Row " . ($index + 2) . ": " . $e->getMessage();
+                }
+            }
+
+            DB::commit();
+
+            $response = [
+                'success' => true,
+                'message' => "Import completed. {$imported} employees imported successfully.",
+                'data' => [
+                    'imported' => $imported,
+                    'failed' => $failed,
+                    'total_rows' => $imported + $failed
+                ]
+            ];
+
+            if (!empty($errors)) {
+                $response['errors'] = array_slice($errors, 0, 20); // Limit to first 20 errors
+                $response['total_errors'] = count($errors);
+            }
+
+            if (!empty($duplicates)) {
+                $response['duplicates'] = array_slice($duplicates, 0, 10); // Limit to first 10 duplicates
+            }
+
+            return response()->json($response, 200);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to import CSV file',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Download CSV template
+     */
+    public function downloadTemplate(): JsonResponse
+    {
+        try {
+            $headers = [
+                'nik',
+                'first_name',
+                'last_name',
+                'mobile_phone',
+                'gender',
+                'last_education',
+                'place_of_birth',
+                'date_of_birth',
+                'position',
+                'branch',
+                'contract_type',
+                'grade',
+                'bank',
+                'account_number',
+                'acc_holder_name',
+                'letter_id'
+            ];
+
+            $sampleData = [
+                [
+                    '1234567890123456',
+                    'John',
+                    'Doe',
+                    '081234567890',
+                    'Men',
+                    'S1',
+                    'Jakarta',
+                    '1990-01-01',
+                    'Software Engineer',
+                    'Head Office',
+                    'Permanent',
+                    'Senior',
+                    'BCA',
+                    '1234567890',
+                    'John Doe',
+                    ''
+                ]
+            ];
+
+            $csvContent = implode(',', $headers) . "\n";
+            foreach ($sampleData as $row) {
+                $csvContent .= '"' . implode('","', $row) . '"' . "\n";
+            }
+
+            $fileName = 'employee_import_template.csv';
+            $filePath = storage_path('app/public/templates/' . $fileName);
+            
+            // Create directory if not exists
+            if (!file_exists(dirname($filePath))) {
+                mkdir(dirname($filePath), 0755, true);
+            }
+
+            file_put_contents($filePath, $csvContent);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Template generated successfully',
+                'download_url' => asset('storage/templates/' . $fileName)
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate template',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

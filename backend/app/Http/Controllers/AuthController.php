@@ -1,8 +1,14 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\ChangePasswordRequest;
+use App\Http\Requests\Auth\ForgotPasswordRequest;
+use App\Http\Requests\Auth\ResetPasswordRequest;
+use App\Services\AuthService;
 use App\Models\User;
 use App\Models\Employee;
 use Illuminate\Http\Request;
@@ -14,146 +20,156 @@ use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
+    protected $authService;
+
+    public function __construct(AuthService $authService)
+    {
+        $this->authService = $authService;
+    }
+
     /**
      * Register new user - creates both Employee and User records
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        DB::beginTransaction();
-        
         try {
-            // Generate unique NIK
-            $nik = $this->generateNIK();
-
-            // Create Employee record
-            $employee = Employee::create([
-                'nik' => $nik,
-                'first_name' => $request->first_name,
-                'last_name' => $request->last_name,
-                'mobile_phone' => '', // Will be updated by admin later
-                'gender' => 'Men', // Default
-                'last_education' => 'bachelor', // Default
-                'place_of_birth' => '', // Will be updated later
-                'date_of_birth' => now()->subYears(25), // Default
-                'position' => 'Employee', // Default
-                'branch' => 'Main Office', // Default
-                'contract_type' => 'Permanent', // Default
-                'grade' => 'Junior', // Default
-                'bank' => 'BCA', // Default
-                'account_number' => '', // Will be updated later
-                'acc_holder_name' => $request->first_name . ' ' . $request->last_name,
-            ]);
-
-            // Create User record
-            $user = User::create([
-                'employee_id' => $nik,
-                'role' => 'user', // Default role, can be promoted by superadmin
-                'name' => $request->first_name . ' ' . $request->last_name,
-                'mobile_phone' => '', // Will be synced from employee when admin updates
-                'username' => strtolower($request->first_name . '.' . $request->last_name . '.' . substr($nik, -4)),
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
-
-            $token = $user->createToken('auth_token')->plainTextToken;
-
-            DB::commit();
+            $result = $this->authService->register($request->validated());
 
             return response()->json([
                 'success' => true,
-                'message' => 'Registration successful',
+                'message' => 'Registration successful! Welcome to HRIS.',
                 'data' => [
                     'user' => [
-                        'id' => $user->id_users,
-                        'nik' => $user->employee_id,
-                        'name' => $user->name,
-                        'username' => $user->username,
-                        'email' => $user->email,
-                        'role' => $user->role,
+                        'id' => $result['user']->id_users,
+                        'nik' => $result['user']->employee_id,
+                        'name' => $result['user']->name,
+                        'username' => $result['user']->username,
+                        'email' => $result['user']->email,
+                        'role' => $result['user']->role,
                     ],
-                    'token' => $token,
+                    'employee' => [
+                        'nik' => $result['employee']->nik,
+                        'first_name' => $result['employee']->first_name,
+                        'last_name' => $result['employee']->last_name,
+                        'position' => $result['employee']->position,
+                        'branch' => $result['employee']->branch,
+                    ],
+                    'token' => $result['token'],
                     'token_type' => 'Bearer'
                 ]
             ], 201);
 
         } catch (\Exception $e) {
-            DB::rollback();
             return response()->json([
                 'success' => false,
-                'message' => 'Registration failed',
-                'error' => $e->getMessage()
+                'message' => 'Registration failed. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
             ], 500);
         }
     }
 
     /**
-     * Login with multiple options: email, phone, or NIK
+     * Login with multiple options: email, phone, username, or NIK
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'login' => 'required|string', // Can be email, phone, or NIK
-            'password' => 'required|string',
-        ]);
+        try {
+            $result = $this->authService->login(
+                $request->login,
+                $request->password,
+                $request->boolean('remember', false)
+            );
 
-        if ($validator->fails()) {
+            if (!$result['success']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid credentials. Please check your email/phone/NIK and password.'
+                ], 401);
+            }
+
+            $user = $result['user'];
+            $profileData = $this->authService->getUserProfile($user);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful! Welcome back.',
+                'data' => [
+                    'user' => $profileData['user'],
+                    'employee' => $profileData['employee'],
+                    'token' => $result['token'],
+                    'token_type' => 'Bearer'
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Login failed. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
+    }
 
-        $user = $this->findUserByLogin($request->login);
+    /**
+     * Send password reset link
+     */
+    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->authService->sendPasswordResetLink($request->email);
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+            if (!$result) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No account found with this email address.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password reset link has been sent to your email.'
+            ], 200);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Invalid credentials'
-            ], 401);
+                'message' => 'Failed to send password reset link. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
+    }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
+    /**
+     * Reset password with token
+     */
+    public function resetPassword(ResetPasswordRequest $request): JsonResponse
+    {
+        try {
+            $result = $this->authService->resetPassword(
+                $request->email,
+                $request->token,
+                $request->password
+            );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Login successful',
-            'data' => [
-                'user' => [
-                    'id' => $user->id_users,
-                    'nik' => $user->employee_id,
-                    'name' => $user->name,
-                    'username' => $user->username,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'mobile_phone' => $user->mobile_phone,
-                    'employee' => $user->employee ? [
-                        'first_name' => $user->employee->first_name,
-                        'last_name' => $user->employee->last_name,
-                        'position' => $user->employee->position,
-                        'branch' => $user->employee->branch,
-                        'avatar_url' => $user->employee->avatar_url,
-                    ] : null
-                ],
-                'token' => $token,
-                'token_type' => 'Bearer'
-            ]
-        ], 200);
+            if (!$result) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid or expired reset token.'
+                ], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password has been reset successfully. You can now login with your new password.'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reset password. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
     }
 
     /**
@@ -177,7 +193,7 @@ class AuthController extends Controller
         // For now, return placeholder response
         return response()->json([
             'success' => false,
-            'message' => 'Google login not implemented yet'
+            'message' => 'Google login will be available soon. Please use email login for now.'
         ], 501);
     }
 
@@ -186,34 +202,23 @@ class AuthController extends Controller
      */
     public function profile(Request $request): JsonResponse
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
+            $profileData = $this->authService->getUserProfile($user);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Profile retrieved successfully',
-            'data' => [
-                'user' => [
-                    'id' => $user->id_users,
-                    'nik' => $user->employee_id,
-                    'name' => $user->name,
-                    'username' => $user->username,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'mobile_phone' => $user->mobile_phone,
-                ],
-                'employee' => $user->employee ? [
-                    'nik' => $user->employee->nik,
-                    'first_name' => $user->employee->first_name,
-                    'last_name' => $user->employee->last_name,
-                    'full_name' => $user->employee->full_name,
-                    'gender' => $user->employee->gender,
-                    'position' => $user->employee->position,
-                    'branch' => $user->employee->branch,
-                    'contract_type' => $user->employee->contract_type,
-                    'avatar_url' => $user->employee->avatar_url,
-                ] : null
-            ]
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile retrieved successfully',
+                'data' => $profileData
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve profile.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
     }
 
     /**
@@ -300,36 +305,35 @@ class AuthController extends Controller
     /**
      * Change password
      */
-    public function changePassword(Request $request): JsonResponse
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
-            'current_password' => 'required|string',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+        try {
+            $user = $request->user();
+            $result = $this->authService->changePassword(
+                $user,
+                $request->current_password,
+                $request->password
+            );
 
-        if ($validator->fails()) {
+            if (!$result) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Current password is incorrect.'
+                ], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password changed successfully.'
+            ], 200);
+
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'Failed to change password. Please try again.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
-
-        $user = $request->user();
-
-        if (!Hash::check($request->current_password, $user->password)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Current password is incorrect'
-            ], 400);
-        }
-
-        $user->update(['password' => Hash::make($request->password)]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Password changed successfully'
-        ], 200);
     }
 
     /**
@@ -337,43 +341,44 @@ class AuthController extends Controller
      */
     public function logout(Request $request): JsonResponse
     {
-        $request->user()->currentAccessToken()->delete();
+        try {
+            $user = $request->user();
+            $this->authService->logout($user);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logged out successfully'
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Logged out successfully. See you next time!'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to logout.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
     }
 
     /**
-     * Find user by login (email, phone, or NIK)
+     * Logout from all devices
      */
-    private function findUserByLogin(string $login): ?User
+    public function logoutFromAllDevices(Request $request): JsonResponse
     {
-        // Try to find by email first
-        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
-            return User::where('email', $login)->first();
+        try {
+            $user = $request->user();
+            $this->authService->logoutFromAllDevices($user);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Logged out from all devices successfully.'
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to logout from all devices.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
         }
-
-        // Try to find by phone (from employee table)
-        $employeeByPhone = Employee::where('mobile_phone', $login)->first();
-        if ($employeeByPhone) {
-            return User::where('employee_id', $employeeByPhone->nik)->first();
-        }
-
-        // Try to find by NIK (employee_id)
-        return User::where('employee_id', $login)->first();
-    }
-
-    /**
-     * Generate unique NIK
-     */
-    private function generateNIK(): string
-    {
-        do {
-            $nik = 'EMP' . date('Y') . str_pad(random_int(1, 9999), 4, '0', STR_PAD_LEFT);
-        } while (Employee::where('nik', $nik)->exists());
-
-        return $nik;
     }
 }

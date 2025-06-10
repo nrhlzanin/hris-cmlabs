@@ -1,12 +1,19 @@
 'use client';
 import React from "react";
+import { useRouter } from "next/navigation";
 import { AdminNavbar } from "@/components/admin/AdminNavbar";
 
 export default function AddCheckboxPage() {
+  const router = useRouter();
+
+  const handleCancel = () => {
+    router.push('/admin/checklock');
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <AdminNavbar />
-      
+
       <div className="p-6">
         <div className="bg-white rounded shadow p-6 max-w-5xl mx-auto">
           <h2 className="text-2xl font-semibold mb-4">Add Checkbox</h2>
@@ -100,7 +107,12 @@ export default function AddCheckboxPage() {
             </div>
           </div>
           <div className="flex justify-end space-x-4 mt-6">
-            <button className="px-4 py-2 bg-gray-300 text-gray-700 rounded">Cancel</button>
+            <button 
+              onClick={handleCancel}
+              className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+            >
+              Cancel
+            </button>
             <button className="px-4 py-2 bg-black text-white rounded">Save</button>
           </div>
         </div>

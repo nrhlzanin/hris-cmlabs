@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class CheckClock extends Model
 {
@@ -11,25 +12,26 @@ class CheckClock extends Model
 
     /**
      * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
      */
     protected $fillable = [
         'user_id',
         'check_clock_type',
         'check_clock_time',
+        'latitude',
+        'longitude',
+        'address',
+        'supporting_evidence',
     ];
 
     /**
      * The attributes that should be cast.
-     *
-     * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
             'check_clock_time' => 'datetime',
-            'check_clock_type' => 'string',
+            'latitude' => 'decimal:8',
+            'longitude' => 'decimal:8',
         ];
     }
 
@@ -98,23 +100,23 @@ class CheckClock extends Model
     }
 
     /**
-     * Get formatted check clock time.
+     * Get formatted time attribute
      */
     public function getFormattedTimeAttribute(): string
     {
-        return $this->check_clock_time->format('H:i');
+        return $this->check_clock_time->format('H:i:s');
     }
 
     /**
-     * Get formatted check clock date.
+     * Get formatted date attribute
      */
     public function getFormattedDateAttribute(): string
     {
-        return $this->check_clock_time->format('d M Y');
+        return $this->check_clock_time->format('Y-m-d');
     }
 
     /**
-     * Check if this is a clock in record.
+     * Check if this is a clock in record
      */
     public function isClockIn(): bool
     {
@@ -122,7 +124,7 @@ class CheckClock extends Model
     }
 
     /**
-     * Check if this is a clock out record.
+     * Check if this is a clock out record
      */
     public function isClockOut(): bool
     {
