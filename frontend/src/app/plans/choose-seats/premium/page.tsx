@@ -3,18 +3,35 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { SEAT_PLANS, TAX_RATE } from '../../config';
+import { useRouter } from "next/navigation";
+import { useAuth } from '@/hooks/use-auth';
+import { usePlans } from '@/hooks/usePlans';
 import { SeatPlan, CartItem } from '../../types';
 
+const TAX_RATE = 0.11; // 11% VAT for Indonesia
+
 export default function ChoosePremiumSeats() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [seatCount, setSeatCount] = useState(1);
   const [plan, setPlan] = useState<SeatPlan | null>(null);
+  const { seatPlans, loading } = usePlans();
+
+  // Authentication check
+  useEffect(() => {
+    if (!authLoading && !user) {
+      // Store the current page URL to redirect back after login
+      localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      router.push('/auth/sign-in');
+      return;
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
-    // Load Premium seat plan from config
-    const premiumPlan = SEAT_PLANS.find((p: any) => p.id === 'premium-seat');
+    // Load Premium seat plan from API/context
+    const premiumPlan = seatPlans.find((p: any) => p.id === 'premium-seat');
     if (premiumPlan) setPlan(premiumPlan);
-  }, []);
+  }, [seatPlans]);
 
   const getCurrentPrice = () => {
     if (!plan) return 0;
@@ -43,10 +60,18 @@ export default function ChoosePremiumSeats() {
     
     // Navigate to payment
     window.location.href = '/plans/payment';
-  };
-
-  return (
+  };  return (
     <main className="bg-white text-gray-900 font-inter min-h-screen flex flex-col">
+      {(loading || authLoading) && (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading seat plan details...</p>
+          </div>
+        </div>
+      )}
+      
+      {!loading && !authLoading && (
       <div className="max-w-7xl mx-auto px-4 py-12 flex-grow grid grid-cols-1 sm:grid-cols-2 gap-10">
         {/* Left Section */}
         <div className="flex flex-col justify-between">
@@ -167,9 +192,7 @@ export default function ChoosePremiumSeats() {
           <div className="flex justify-between font-bold text-lg mb-6">
             <span>Total</span>
             <span>Rp {total.toLocaleString('id-ID')}</span>
-          </div>
-
-          <button 
+          </div>          <button 
             onClick={handleConfirmPurchase}
             className="w-full bg-blue-900 text-white py-3 rounded hover:bg-blue-800 font-semibold"
           >
@@ -177,6 +200,7 @@ export default function ChoosePremiumSeats() {
           </button>
         </div>
       </div>
+      )}
     </main>
   );
 }

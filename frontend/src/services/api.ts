@@ -1,3 +1,5 @@
+import { Plan, SeatPlan, PaymentMethod, BillingInfo } from '@/app/plans/types';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 class ApiService {  private getAuthHeaders() {
@@ -237,6 +239,119 @@ class ApiService {  private getAuthHeaders() {
       return await this.handleResponse(response);
     } catch (error) {
       console.error('Get letter formats error:', error);
+      throw error;
+    }
+  }
+  // Plans API
+  async getPlans(): Promise<{ package_plans: any[], seat_plans: any[] }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/plans`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await this.handleResponse(response);
+      return data.data;
+    } catch (error) {
+      console.error('Get plans error:', error);
+      throw error;
+    }
+  }
+
+  async getPlan(id: string): Promise<Plan | SeatPlan> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/plans/${id}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await this.handleResponse(response);
+      return data.data;
+    } catch (error) {
+      console.error('Get plan error:', error);
+      throw error;
+    }
+  }
+
+  // Payment Methods API
+  async getPaymentMethods(): Promise<{ cards: PaymentMethod[], banks: PaymentMethod[], digital_wallets: PaymentMethod[] }> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payment-methods`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await this.handleResponse(response);
+      return data.data;
+    } catch (error) {
+      console.error('Get payment methods error:', error);
+      throw error;
+    }
+  }
+
+  // Payment Processing API
+  async calculatePayment(data: {
+    plan_id: string;
+    billing_period?: 'monthly' | 'yearly';
+    quantity: number;
+    payment_method_id: string;
+  }) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payment/calculate`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      const responseData = await this.handleResponse(response);
+      return responseData.data;
+    } catch (error) {
+      console.error('Calculate payment error:', error);
+      throw error;
+    }
+  }
+
+  async processPayment(data: {
+    plan_id: string;
+    payment_method_id: string;
+    billing_period?: 'monthly' | 'yearly';
+    quantity: number;
+    billing_info: BillingInfo;
+  }) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payment/process`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      const responseData = await this.handleResponse(response);
+      return responseData.data;
+    } catch (error) {
+      console.error('Process payment error:', error);
+      throw error;
+    }
+  }
+
+  async getOrder(orderId: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/payment/order/${orderId}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await this.handleResponse(response);
+      return data.data;
+    } catch (error) {
+      console.error('Get order error:', error);
       throw error;
     }
   }

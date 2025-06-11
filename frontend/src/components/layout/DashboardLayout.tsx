@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   HomeIcon,
   ClockIcon,
@@ -14,7 +15,13 @@ import {
   Bars3Icon,
   XMarkIcon,
   ArrowRightOnRectangleIcon,
+  MagnifyingGlassIcon,
+  BellIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
+import { RiSearchLine } from 'react-icons/ri';
+import { Fragment } from 'react';
+import { Menu, Transition } from '@headlessui/react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -72,8 +79,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <XMarkIcon className="h-6 w-6 text-white" />
             </button>
           </div>
-          <div className="flex-shrink-0 flex items-center px-4">
-            <h1 className="text-xl font-bold text-blue-600">HRIS</h1>
+          <div className="flex h-16 flex-shrink-0 items-center px-4">
+            <Link href="/" aria-label="Back to Homepage">
+              <Image src="/img/logo/Logo HRIS-1.png" alt="HRIS Logo" width={50} height={32} priority />
+            </Link>
           </div>
           <div className="mt-5 flex-1 h-0 overflow-y-auto">
             <nav className="px-2 space-y-1">
@@ -98,10 +107,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex flex-col w-64">
           <div className="flex flex-col flex-grow pt-5 pb-4 overflow-y-auto bg-white border-r border-gray-200">
             <div className="flex items-center flex-shrink-0 px-4">
-              <h1 className="text-2xl font-bold text-blue-600">HRIS</h1>
-              <span className="ml-2 text-sm text-gray-500">
-                {isAdmin ? 'Admin' : 'User'}
-              </span>
+              <div className="flex flex-shrink-0 items-center px-4">
+                <Link href="/" aria-label="Back to Homepage">
+                  <Image src="/img/logo/Logo HRIS-1.png" alt="HRIS Logo" width={65} height={32} priority />
+                </Link>
+              </div>
             </div>
             <div className="mt-5 flex-grow flex flex-col">
               <nav className="flex-1 px-2 space-y-1">
@@ -124,50 +134,89 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Main content */}
       <div className="flex flex-col w-0 flex-1 overflow-hidden">
         {/* Top navigation */}
-        <div className="relative z-10 flex-shrink-0 flex h-16 bg-white shadow">
-          <button
-            className="px-4 border-r border-gray-200 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 md:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Bars3Icon className="h-6 w-6" />
-          </button>
-          <div className="flex-1 px-4 flex justify-between">
-            <div className="flex-1 flex">
-              <div className="w-full flex md:ml-0">
-                <div className="relative w-full text-gray-400 focus-within:text-gray-600">
-                  <div className="absolute inset-y-0 left-0 flex items-center">
-                    <h2 className="text-lg font-semibold text-gray-900 ml-3">
-                      Welcome back, {user?.name}!
-                    </h2>
-                  </div>
-                </div>
+        {/* GANTI SELURUH BLOK "Top navigation" ANDA DENGAN INI */}
+        <header className="sticky top-0 z-40 flex h-16 flex-shrink-0 items-center justify-between gap-x-6 border-b border-gray-200 bg-white px-4 sm:px-6">
+
+          {/* Kiri: Tombol Menu Mobile & Judul Halaman */}
+          <div className="flex items-center gap-x-4">
+            <button type="button" className="-m-2.5 p-2.5 text-gray-700 md:hidden" onClick={() => setSidebarOpen(true)}>
+              <span className="sr-only">Open sidebar</span>
+              <Bars3Icon className="h-6 w-6" />
+            </button>
+            <h1 className="text-xl font-bold text-gray-900">{/* Anda bisa tambahkan judul halaman dinamis di sini jika perlu */}</h1>
+          </div>
+
+          {/* Tengah: Search Bar */}
+          <div className="hidden sm:flex flex-1 justify-center px-4">
+            <div className="relative w-full max-w-md">
+              <label htmlFor="search-field" className="sr-only">Search</label>
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
               </div>
-            </div>
-            <div className="ml-4 flex items-center md:ml-6">
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-700">
-                  {user?.email}
-                </span>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  user?.role === 'super_admin' 
-                    ? 'bg-purple-100 text-purple-800' 
-                    : user?.role === 'admin'
-                    ? 'bg-blue-100 text-blue-800'
-                    : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {user?.role?.replace('_', ' ').toUpperCase()}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md"
-                >
-                  <ArrowRightOnRectangleIcon className="h-4 w-4 mr-2" />
-                  Logout
-                </button>
-              </div>
+              <input
+                id="search-field"
+                name="search"
+                type="search"
+                placeholder="Search..."
+                className="block w-full rounded-lg border-0 bg-gray-100 py-2.5 pl-10 pr-3 text-gray-900 placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm"
+              />
             </div>
           </div>
-        </div>
+
+          {/* Kanan: Notifikasi & Profil */}
+          <div className="flex items-center gap-x-4">
+            <button type="button" className="relative rounded-full p-2 text-gray-500 hover:bg-gray-100">
+              <span className="sr-only">View notifications</span>
+              <BellIcon className="h-6 w-6" />
+            </button>
+
+            <div className="hidden sm:block sm:h-6 sm:w-px sm:bg-gray-200" aria-hidden="true" />
+
+            <Menu as="div" className="relative">
+              <Menu.Button className="-m-1.5 flex items-center rounded-full p-1.5 text-left transition-colors hover:bg-gray-100">
+                <span className="sr-only">Open user menu</span>
+                <div className="h-9 w-9 rounded-full bg-blue-800 flex items-center justify-center text-white font-bold">
+                  {user?.first_name?.charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden lg:flex lg:flex-col lg:items-start ml-3">
+                  <span className="text-sm font-semibold text-gray-900">
+                    {user?.first_name} {user?.last_name}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {user?.role?.replace('_', ' ')}
+                  </span>
+                </span>
+                <ChevronDownIcon className="ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
+              </Menu.Button>
+              <Transition
+                as={Fragment}
+                enter="transition ease-out duration-100"
+                enterFrom="transform opacity-0 scale-95"
+                enterTo="transform opacity-100 scale-100"
+                leave="transition ease-in duration-75"
+                leaveFrom="transform opacity-100 scale-100"
+                leaveTo="transform opacity-0 scale-95"
+              >
+                <Menu.Items className="absolute right-0 z-10 mt-2.5 w-48 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
+                  <Menu.Item>
+                    {({ active }) => (
+                      <Link href="/user/profile" className={`block px-3 py-1.5 text-sm text-gray-900 ${active ? 'bg-gray-50' : ''}`}>
+                        Your Profile
+                      </Link>
+                    )}
+                  </Menu.Item>
+                  <Menu.Item>
+                    {({ active }) => (
+                      <button onClick={handleLogout} className={`block w-full text-left px-3 py-1.5 text-sm text-gray-900 ${active ? 'bg-gray-50' : ''}`}>
+                        Sign out
+                      </button>
+                    )}
+                  </Menu.Item>
+                </Menu.Items>
+              </Transition>
+            </Menu>
+          </div>
+        </header>
 
         {/* Page content */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none">

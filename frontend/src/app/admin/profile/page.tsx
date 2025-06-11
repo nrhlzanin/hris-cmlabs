@@ -5,6 +5,8 @@ import { formatJakartaDate } from '@/lib/timezone';
 import ProfileHeader from '@/app/components/admin/profile/profilecard';
 import SalaryDetail from '@/app/components/admin/profile/salarydetail';
 import WorkHours from '@/app/components/admin/profile/workhours';
+import AuthWrapper from '@/components/auth/AuthWrapper';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 
 export default function ProfilePage() {
   const startDate = formatJakartaDate(new Date('2045-12-30'), {
@@ -15,14 +17,18 @@ export default function ProfilePage() {
   });
 
   return (
-    <div className="bg-gray-100 min-h-screen py-10">
-      <div className="p-6 max-w-5xl mx-auto font-sans space-y-6">
-        <ProfileHeader name="Anindya Nurhaliza Putri" lastUpdate={lastUpdate} startDate={startDate} />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SalaryDetail />
-          <WorkHours />
+    <AuthWrapper requireAdmin={true}>
+      <DashboardLayout>
+        <div className="bg-gray-100 min-h-screen py-10">
+          <div className="p-6 max-w-5xl mx-auto font-sans space-y-6">
+            <ProfileHeader name="Anindya Nurhaliza Putri" lastUpdate={lastUpdate} startDate={startDate} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <SalaryDetail />
+              <WorkHours />
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }
