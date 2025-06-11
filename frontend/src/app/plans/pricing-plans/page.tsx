@@ -2,49 +2,78 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { PACKAGE_PLANS, SEAT_PLANS } from "../config";
+import { useRouter } from "next/navigation";
+import { usePlans } from "@/hooks/usePlans";
 import { Plan, SeatPlan } from "../types";
 
 export default function PricingPage() {
   const [currentPlanType, setCurrentPlanType] = useState<"package" | "seat">(
     "package"
   );
+  const { packagePlans, seatPlans, loading, error, usingApi, refetch } = usePlans();
+  const router = useRouter();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-white via-blue-100 to-blue-500 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading pricing plans...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleToggleChange = (type: "package" | "seat") => {
     setCurrentPlanType(type);
-  };
-  const handlePlanSelect = (
+  };  const handlePlanSelect = (
     plan: Plan | SeatPlan,
     planType: "package" | "seat"
   ) => {
-    const planData = {
-      id: plan.id,
-      name: plan.name,
-      type: planType,
-      price:
-        planType === "package"
-          ? (plan as Plan).price
-          : { seat: (plan as SeatPlan).pricePerSeat },
-      features: plan.features,
-    };
+    console.log('Plan selected:', plan, 'Type:', planType);
+    
+    try {
+      const planData = {
+        id: plan.id,
+        name: plan.name,
+        type: planType,
+        price:
+          planType === "package"
+            ? (plan as Plan).price
+            : { seat: (plan as SeatPlan).pricePerSeat },
+        features: plan.features,
+      };
 
-    // Store plan data for the selection pages
-    localStorage.setItem("selectedPlan", JSON.stringify(planData));    // Navigate to appropriate selection page
-    if (planType === "package") {
-      if (plan.id === "lite") {
-        window.location.href = "/plans/choose-lite";
-      } else if (plan.id === "pro") {
-        window.location.href = "/plans/choose-pro";
+      console.log('Storing plan data:', planData);
+      
+      // Store plan data for the selection pages
+      localStorage.setItem("selectedPlan", JSON.stringify(planData));
+
+      // Navigate to appropriate selection page using Next.js router
+      if (planType === "package") {
+        if (plan.id === "lite") {
+          console.log('Navigating to lite plan');
+          router.push("/plans/choose-lite");
+        } else if (plan.id === "pro") {
+          console.log('Navigating to pro plan');
+          router.push("/plans/choose-pro");
+        } else {
+          console.log('Unknown package plan:', plan.id);
+        }
+      } else {
+        // For seat plans, navigate to seat selection pages
+        if (plan.id === "standard-seat") {
+          router.push("/plans/choose-seats/standard");
+        } else if (plan.id === "premium-seat") {
+          router.push("/plans/choose-seats/premium");
+        } else if (plan.id === "enterprise-seat") {
+          router.push("/plans/choose-seats/enterprise");
+        } else {
+          console.log('Unknown seat plan:', plan.id);
+        }
       }
-    } else {
-      // For seat plans, navigate to seat selection pages
-      if (plan.id === "standard-seat") {
-        window.location.href = "/plans/choose-seats/standard";
-      } else if (plan.id === "premium-seat") {
-        window.location.href = "/plans/choose-seats/premium";
-      } else if (plan.id === "enterprise-seat") {
-        window.location.href = "/plans/choose-seats/enterprise";
-      }
+    } catch (error) {
+      console.error('Error in handlePlanSelect:', error);
     }
   };
 
@@ -109,33 +138,44 @@ export default function PricingPage() {
               Seat
             </label>
           </div>
-        </div>{" "}
-        <div className="min-h-[600px]">
-          {" "}
+        </div>{" "}        <div className="min-h-[600px]">
+          {error && (
+            <div className="text-center mb-4">
+              <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded-lg inline-block">
+                <div className="flex items-center space-x-2">
+                  <span>⚠️ {error}</span>
+                  <button 
+                    onClick={refetch}
+                    className="ml-2 px-2 py-1 bg-yellow-200 hover:bg-yellow-300 rounded text-xs"
+                  >
+                    Retry API
+                  </button>
+                </div>
+              </div>
+            </div>          )}
+          
           {/* Package Plans */}
           <div
             className={`grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-6 transition-all duration-300 ${
               currentPlanType === "package" ? "block" : "hidden"
             }`}
-          >
-            {PACKAGE_PLANS.map((plan: Plan) => {
+          >            {packagePlans.map((plan: Plan) => {
               const getCardStyles = () => {
                 if (plan.id === "starter")
-                  return "bg-gradient-to-l from-[#1D395E] to-[#3C77C4] text-white";
-                if (plan.id === "lite") return "bg-[#2E2E3A] text-white";
+                  return "bg-gradient-to-l from-[#4A90E2] to-[#357ABD] text-white";
+                if (plan.id === "lite") 
+                  return "bg-[#2E2E3A] text-white";
                 return "bg-gradient-to-l from-[#7CA5BF] to-[#3A4D59] text-white";
               };
 
               const getButtonStyles = () => {
                 if (plan.id === "starter")
                   return "bg-[#2D8DFE] text-white hover:bg-[#2278D2]";
-                return "bg-white text-blue-500 hover:bg-gray-200";
-              };
-
-              return (
+                return "bg-white text-blue-500 hover:bg-gray-100";
+              };return (
                 <div
                   key={plan.id}
-                  className={`${getCardStyles()} rounded-xl shadow-lg p-8`}
+                  className={`${getCardStyles()} rounded-xl shadow-lg p-8 transform hover:scale-105 transition-all duration-300`}
                 >
                   <h3 className="text-2xl font-semibold text-left">
                     {plan.name}
@@ -158,43 +198,40 @@ export default function PricingPage() {
                       .map((feature: any, index: number) => (
                         <li key={index}>{feature.name}</li>
                       ))}
-                  </ul>
-                  {plan.id === "starter" ? (
+                  </ul>                  {plan.id === "starter" ? (
                     <button
-                      className={`mt-6 w-full ${getButtonStyles()} font-bold py-3 rounded-lg transition`}
+                      className={`mt-6 w-full ${getButtonStyles()} font-bold py-3 rounded-lg transition-all duration-200`}
                     >
                       Current Plan
                     </button>
                   ) : (
                     <button
                       onClick={() => handlePlanSelect(plan, "package")}
-                      className={`mt-6 w-full ${getButtonStyles()} font-bold py-3 rounded-lg transition`}
+                      className={`mt-6 w-full ${getButtonStyles()} font-bold py-3 rounded-lg transition-all duration-200`}
                     >
                       {plan.buttonText}
                     </button>
                   )}
                 </div>
-              );
-            })}
-          </div>{" "}
+              );            })}
+          </div>
+          
           {/* Seat Plans */}
           <div
             className={`grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto px-6 transition-all duration-300 ${
               currentPlanType === "seat" ? "block" : "hidden"
             }`}
-          >
-            {SEAT_PLANS.map((plan: SeatPlan, index: number) => {
+          >            {seatPlans.map((plan: SeatPlan, index: number) => {
               const getCardStyles = () => {
                 if (index === 0)
-                  return "bg-gradient-to-l from-[#1D395E] to-[#3C77C4] text-white";
-                if (index === 1) return "bg-[#2E2E3A] text-white";
+                  return "bg-gradient-to-l from-[#4A90E2] to-[#357ABD] text-white";
+                if (index === 1) 
+                  return "bg-[#2E2E3A] text-white";
                 return "bg-gradient-to-l from-[#7CA5BF] to-[#3A4D59] text-white";
-              };
-
-              return (
+              };              return (
                 <div
                   key={plan.id}
-                  className={`${getCardStyles()} rounded-xl shadow-lg p-8`}
+                  className={`${getCardStyles()} rounded-xl shadow-lg p-8 transform hover:scale-105 transition-all duration-300`}
                 >
                   <h3 className="text-2xl font-semibold text-left">
                     {plan.name}
@@ -210,10 +247,9 @@ export default function PricingPage() {
                       .map((feature: any, index: number) => (
                         <li key={index}>{feature.name}</li>
                       ))}
-                  </ul>
-                  <button
+                  </ul>                  <button
                     onClick={() => handlePlanSelect(plan, "seat")}
-                    className="mt-6 w-full bg-[#2D8DFE] text-white font-bold py-3 rounded-lg hover:bg-[#2278D2] transition"
+                    className="mt-6 w-full bg-white text-blue-500 hover:bg-gray-100 font-bold py-3 rounded-lg transition-all duration-200"
                   >
                     {plan.buttonText}
                   </button>

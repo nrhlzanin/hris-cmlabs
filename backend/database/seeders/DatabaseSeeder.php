@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         // Run the AdminSeeder
         $this->call([
             AdminSeeder::class,
+            FixedPlansSeeder::class,
         ]);
 
         // User::factory(10)->create();

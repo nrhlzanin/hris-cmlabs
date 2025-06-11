@@ -2,8 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { PAYMENT_METHODS, PACKAGE_PLANS, CURRENCIES, TAX_RATE } from '../config';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
+import { PAYMENT_METHODS, PACKAGE_PLANS, CURRENCIES, TAX_RATE } from '../config-minimal';
 import { PaymentMethod, BillingInfo, CartItem, PaymentData } from '../types';
+import { usePaymentMethods } from '@/hooks/usePlans';
 import {
   SuccessPopup,
   ErrorPopup,
@@ -15,6 +18,9 @@ import {
 } from '@/components/ui/popups';
 
 export default function PaymentPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
+  const { paymentMethods, loading: paymentMethodsLoading } = usePaymentMethods();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
   const [billingInfo, setBillingInfo] = useState<BillingInfo>({
     firstName: '',
@@ -40,9 +46,18 @@ export default function PaymentPage() {
   const [showLoadingPopup, setShowLoadingPopup] = useState(false);
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const [showWarningPopup, setShowWarningPopup] = useState(false);
-  const [showInfoPopup, setShowInfoPopup] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showInfoPopup, setShowInfoPopup] = useState(false);  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [paymentData, setPaymentData] = useState<any>(null);
+
+  // Authentication check
+  useEffect(() => {
+    if (!authLoading && !user) {
+      // Store the current page URL to redirect back after login
+      localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      router.push('/auth/sign-in');
+      return;
+    }
+  }, [user, authLoading, router]);
 
   // Load cart data from localStorage or URL params
   useEffect(() => {
@@ -143,17 +158,21 @@ export default function PaymentPage() {
     const total = cartItem.totalPrice;
     const subtotal = Math.round(total / (1 + TAX_RATE));
     const tax = total - subtotal;
-    
-    // Add processing fee if payment method is selected
-    const selectedPaymentMethodData = PAYMENT_METHODS.find(method => method.id === selectedPaymentMethod);
+      // Add processing fee if payment method is selected
+    const selectedPaymentMethodData = paymentMethods.find(method => method.id === selectedPaymentMethod);
     const processingFee = selectedPaymentMethodData?.processing_fee || 0;
     const finalTotal = total + processingFee;
     
     return { subtotal, tax, total, processingFee, finalTotal };
   };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Immediate check for payment method
+    if (!selectedPaymentMethod) {
+      alert('Please select a payment method before continuing.');
+      return;
+    }
     
     // First validate the form and show validation popup if errors exist
     if (!validateForm() || !cartItem) {
@@ -176,9 +195,7 @@ export default function PaymentPage() {
       setValidationErrors(errorList);
       setShowValidationPopup(true);
       return;
-    }
-
-    const selectedMethod = PAYMENT_METHODS.find(method => method.id === selectedPaymentMethod);
+    }const selectedMethod = paymentMethods.find(method => method.id === selectedPaymentMethod);
     const totals = calculateTotals();
     
     // Set payment data for confirmation popup
@@ -217,9 +234,8 @@ export default function PaymentPage() {
       // Simulate random success/failure for demo (90% success rate)
       const isSuccess = Math.random() > 0.1;
       
-      if (isSuccess) {
-        // Success: Create order data for confirmation page
-        const selectedPaymentMethodData = PAYMENT_METHODS.find(method => method.id === selectedPaymentMethod);
+      if (isSuccess) {        // Success: Create order data for confirmation page
+        const selectedPaymentMethodData = paymentMethods.find(method => method.id === selectedPaymentMethod);
         const orderData = {
           cartItems: [cartItem!],
           paymentData: {
@@ -283,8 +299,7 @@ export default function PaymentPage() {
   const showInfoDemo = () => {
     setShowInfoPopup(true);
   };
-
-  const selectedPaymentMethodData = PAYMENT_METHODS.find(method => method.id === selectedPaymentMethod);
+  const selectedPaymentMethodData = paymentMethods.find(method => method.id === selectedPaymentMethod);
   const { subtotal, tax, total, processingFee, finalTotal } = calculateTotals();
 
   if (!cartItem) {
@@ -299,9 +314,20 @@ export default function PaymentPage() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 font-inter">
+      {/* Authentication Loading */}
+      {authLoading && (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Checking authentication...</p>
+          </div>
+        </div>
+      )}
+
+      {!authLoading && (
+      <>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -514,25 +540,19 @@ export default function PaymentPage() {
                 )}
 
                 <div className="space-y-4">
-                  {/* Credit Cards */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Credit & Debit Cards</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {PAYMENT_METHODS.filter(method => method.type === 'card').map((method) => (
-                        <label
+                  {/* Credit Cards */}                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">Credit & Debit Cards</h3>                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {paymentMethods.filter(method => method.type === 'card').map((method) => (
+                        <div
                           key={method.id}
-                          className={`relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                            selectedPaymentMethod === method.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                          onClick={() => {
+                            console.log('Credit card clicked:', method.id);
+                            setSelectedPaymentMethod(method.id);
+                          }}
+                          className={`relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
+                            selectedPaymentMethod === method.id ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200'
                           }`}
                         >
-                          <input
-                            type="radio"
-                            name="payment-method"
-                            value={method.id}
-                            checked={selectedPaymentMethod === method.id}
-                            onChange={(e) => setSelectedPaymentMethod(e.target.value)}
-                            className="sr-only"
-                          />
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center">
                               <div className="w-12 h-8 mr-3 bg-gray-100 rounded flex items-center justify-center overflow-hidden">
@@ -544,7 +564,6 @@ export default function PaymentPage() {
                                     height={32}
                                     className="w-full h-full object-contain"
                                     onError={(e) => {
-                                      // Hide image and show fallback text
                                       const target = e.target as HTMLImageElement;
                                       target.style.display = 'none';
                                       const fallbackSpan = target.nextElementSibling as HTMLElement;
@@ -558,41 +577,45 @@ export default function PaymentPage() {
                                 >
                                   {method.name.substring(0, 4).toUpperCase()}
                                 </span>
-                              </div>
-                              <span className="text-sm font-medium text-gray-900">{method.name}</span>
+                              </div>                              <span className="text-sm font-medium text-gray-900">{method.name}</span>
                             </div>
-                            <div className={`w-4 h-4 rounded-full border-2 ${
-                              selectedPaymentMethod === method.id ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                              selectedPaymentMethod === method.id 
+                                ? 'border-blue-500 bg-blue-500 shadow-md' 
+                                : 'border-gray-300 bg-white hover:border-gray-400'
                             }`}>
                               {selectedPaymentMethod === method.id && (
-                                <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                                <div className="w-3 h-3 rounded-full bg-white"></div>
                               )}
                             </div>
                           </div>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Banks */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Bank Transfer</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {PAYMENT_METHODS.filter(method => method.type === 'bank').map((method) => (
-                        <label
-                          key={method.id}
-                          className={`relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                            selectedPaymentMethod === method.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                          }`}
-                        >
+                          {/* Hidden radio input for form submission */}
                           <input
                             type="radio"
                             name="payment-method"
                             value={method.id}
                             checked={selectedPaymentMethod === method.id}
-                            onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                            onChange={() => {}} // Handled by div onClick
                             className="sr-only"
                           />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Banks */}                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">Bank Transfer</h3>                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {paymentMethods.filter(method => method.type === 'bank').map((method) => (
+                        <div
+                          key={method.id}
+                          onClick={() => {
+                            console.log('Bank method clicked:', method.id);
+                            setSelectedPaymentMethod(method.id);
+                          }}
+                          className={`relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
+                            selectedPaymentMethod === method.id ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200'
+                          }`}
+                        >
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center">
                               <div className="w-12 h-8 mr-3 bg-blue-100 rounded flex items-center justify-center overflow-hidden">
@@ -604,7 +627,6 @@ export default function PaymentPage() {
                                     height={32}
                                     className="w-full h-full object-contain"
                                     onError={(e) => {
-                                      // Hide image and show fallback text
                                       const target = e.target as HTMLImageElement;
                                       target.style.display = 'none';
                                       const fallbackSpan = target.nextElementSibling as HTMLElement;
@@ -620,46 +642,50 @@ export default function PaymentPage() {
                                 </span>
                               </div>
                               <div>
-                                <span className="text-sm font-medium text-gray-900 block">{method.name}</span>
-                                {method.processing_fee && (
+                                <span className="text-sm font-medium text-gray-900 block">{method.name}</span>                                {method.processing_fee && (
                                   <span className="text-xs text-gray-500">
                                     Processing fee: Rp {method.processing_fee.toLocaleString()}
                                   </span>
                                 )}
                               </div>
                             </div>
-                            <div className={`w-4 h-4 rounded-full border-2 ${
-                              selectedPaymentMethod === method.id ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                              selectedPaymentMethod === method.id 
+                                ? 'border-blue-500 bg-blue-500 shadow-md' 
+                                : 'border-gray-300 bg-white hover:border-gray-400'
                             }`}>
                               {selectedPaymentMethod === method.id && (
-                                <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                                <div className="w-3 h-3 rounded-full bg-white"></div>
                               )}
                             </div>
                           </div>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Digital Wallets */}
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Digital Wallets</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {PAYMENT_METHODS.filter(method => method.type === 'digital_wallet').map((method) => (
-                        <label
-                          key={method.id}
-                          className={`relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 ${
-                            selectedPaymentMethod === method.id ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-                          }`}
-                        >
+                          {/* Hidden radio input for form submission */}
                           <input
                             type="radio"
                             name="payment-method"
                             value={method.id}
                             checked={selectedPaymentMethod === method.id}
-                            onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                            onChange={() => {}} // Handled by div onClick
                             className="sr-only"
                           />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Digital Wallets */}<div>
+                    <h3 className="text-sm font-medium text-gray-700 mb-3">Digital Wallets</h3>                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {paymentMethods.filter(method => method.type === 'digital_wallet').map((method) => (
+                        <div
+                          key={method.id}
+                          onClick={() => {
+                            console.log('Digital wallet clicked:', method.id);
+                            setSelectedPaymentMethod(method.id);
+                          }}
+                          className={`relative flex items-center p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
+                            selectedPaymentMethod === method.id ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200' : 'border-gray-200'
+                          }`}
+                        >
                           <div className="flex items-center justify-between w-full">
                             <div className="flex items-center">
                               <div className="w-12 h-8 mr-3 bg-green-100 rounded flex items-center justify-center overflow-hidden">
@@ -671,7 +697,6 @@ export default function PaymentPage() {
                                     height={32}
                                     className="w-full h-full object-contain"
                                     onError={(e) => {
-                                      // Hide image and show fallback text
                                       const target = e.target as HTMLImageElement;
                                       target.style.display = 'none';
                                       const fallbackSpan = target.nextElementSibling as HTMLElement;
@@ -692,31 +717,46 @@ export default function PaymentPage() {
                                   <span className="text-xs text-gray-500">
                                     Processing fee: Rp {method.processing_fee.toLocaleString('id-ID')}
                                   </span>
-                                )}
-                              </div>
+                                )}                              </div>
                             </div>
-                            <div className={`w-4 h-4 rounded-full border-2 ${
-                              selectedPaymentMethod === method.id ? 'border-blue-500 bg-blue-500' : 'border-gray-300'
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                              selectedPaymentMethod === method.id 
+                                ? 'border-blue-500 bg-blue-500 shadow-md' 
+                                : 'border-gray-300 bg-white hover:border-gray-400'
                             }`}>
                               {selectedPaymentMethod === method.id && (
-                                <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                                <div className="w-3 h-3 rounded-full bg-white"></div>
                               )}
                             </div>
                           </div>
-                        </label>
+                          {/* Hidden radio input for form submission */}
+                          <input
+                            type="radio"
+                            name="payment-method"
+                            value={method.id}
+                            checked={selectedPaymentMethod === method.id}
+                            onChange={() => {}} // Handled by div onClick
+                            className="sr-only"
+                          />
+                        </div>
                       ))}
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Submit Button */}
+              </div>              {/* Submit Button */}
               <div className="bg-white rounded-lg shadow-sm p-6">
+                {!selectedPaymentMethod && (
+                  <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-amber-800 text-sm font-medium">
+                      ⚠️ Please select a payment method to continue
+                    </p>
+                  </div>
+                )}
                 <button
                   type="submit"
-                  disabled={isProcessing}
+                  disabled={isProcessing || !selectedPaymentMethod}
                   className={`w-full font-semibold py-3 px-4 rounded-lg transition-colors duration-200 ${
-                    isProcessing 
+                    isProcessing || !selectedPaymentMethod
                       ? 'bg-gray-400 cursor-not-allowed' 
                       : 'bg-blue-600 hover:bg-blue-700 text-white'
                   }`}
@@ -889,15 +929,15 @@ export default function PaymentPage() {
         message="Please review your information before proceeding."
         confirmText="Continue"
         cancelText="Cancel"
-      />
-
-      <InfoPopup
+      />      <InfoPopup
         isOpen={showInfoPopup}
         onClose={() => setShowInfoPopup(false)}
         title="Information"
         message="Here's some important information for you."
         confirmText="OK"
       />
+      </>
+      )}
     </div>
   );
 }
