@@ -2,8 +2,6 @@ import { useState, ChangeEvent, FormEvent } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 
-// --- KOMPONEN BARU UNTUK INPUT PASSWORD ---
-// Komponen ini bisa Anda pindahkan ke file terpisah jika mau
 interface PasswordInputProps {
   label: string;
   name: string;
@@ -58,8 +56,6 @@ function PasswordInput({
   );
 }
 
-
-// --- FORMULIR UTAMA YANG SUDAH DIRAPIKAN ---
 export default function SignUpForm() {
   const router = useRouter();
   const [firstName, setFirstName] = useState("");
@@ -85,7 +81,6 @@ export default function SignUpForm() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Validasi frontend tetap sama...
     const newErrors = { firstName: "", lastName: "", email: "", password: "", confirmPassword: "", terms: "", general: "" };
     if (!firstName) newErrors.firstName = "First name is required";
     if (!lastName) newErrors.lastName = "Last name is required";
@@ -135,7 +130,7 @@ export default function SignUpForm() {
             lastName: result.errors.last_name?.[0] || "",
             email: result.errors.email?.[0] || "",
             password: result.errors.password?.[0] || "",
-            confirmPassword: "", // Reset confirm password error
+            confirmPassword: "",
             terms: result.errors.terms_accepted?.[0] || "",
             general: result.message || "",
           };
@@ -203,7 +198,6 @@ export default function SignUpForm() {
         {errors.email && <p className="text-sm text-red-700 mt-1">{errors.email}</p>}
       </div>
       
-      {/* MENGGUNAKAN KOMPONEN BARU */}
       <PasswordInput
         label="Password"
         name="password"
@@ -217,7 +211,6 @@ export default function SignUpForm() {
         helpText="At least 8 characters with uppercase, lowercase, number, and symbol."
       />
 
-      {/* MENGGUNAKAN KOMPONEN BARU LAGI */}
       <PasswordInput
         label="Confirm Password"
         name="password_confirmation"
