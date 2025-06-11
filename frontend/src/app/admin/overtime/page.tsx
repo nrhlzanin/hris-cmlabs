@@ -136,251 +136,93 @@ export default function AdminOvertimePage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Overtime Management</h1>
-        <Badge variant="outline" className="text-sm">
-          {overtimeRecords.length} records
-        </Badge>
-      </div>
-
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filters
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div>
-              <label className="text-sm font-medium">Search Employee</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by name or employee ID"
-                  value={filters.search}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="pl-9"
-                />
+    <>
+      <div className="min-h-screen bg-gray-100 py-6 px-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-xl shadow overflow-hidden">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Overtime Overview</h1>
+              <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+                <div className="relative w-full sm:w-auto">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search Employee"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full sm:w-60 pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+                <button className="border px-4 py-2 rounded-lg bg-white hover:bg-gray-100 text-sm">Filter</button>
+                <button
+                  onClick={() => setFormModalOpen(true)}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
+                >
+                  Add Data
+                </button>
               </div>
             </div>
-            <div>
-              <label className="text-sm font-medium">Status</label>
-              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">All statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
+
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr className="text-gray-600">
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left">Employee Name</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left">Position</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left">Branch</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left">Grade</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left">Status</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-center">Details</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredEmployees.map((emp) => (
+                    <tr key={emp.id} className="hover:bg-gray-50">
+                      <td className="px-4 md:px-6 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gray-200"></div>
+                          <div>
+                            <div className="font-semibold text-gray-800">{emp.name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap">{emp.position}</td>
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap">{emp.branch}</td>
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap">{emp.grade}</td>
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColor[emp.status]}`}>
+                          {emp.status}
+                        </span>
+                      </td>
+                      <td className="px-4 md:px-6 py-3 text-center">
+                        <button
+                          onClick={() => handleViewDetails(emp)}
+                          className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-blue-700"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-            <div>
-              <label className="text-sm font-medium">Date From</label>
-              <Input
-                type="date"
-                value={filters.date_from}
-                onChange={(e) => setFilters(prev => ({ ...prev, date_from: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Date To</label>
-              <Input
-                type="date"
-                value={filters.date_to}
-                onChange={(e) => setFilters(prev => ({ ...prev, date_to: e.target.value }))}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Overtime Records */}
-      {overtimeRecords.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-medium mb-2">No overtime records found</h3>
-            <p className="text-muted-foreground">
-              No overtime requests match your current filters.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {overtimeRecords.map((record) => (
-            <Card key={record.id} className={isIncomplete(record) ? 'border-yellow-200 bg-yellow-50' : ''}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <User className="h-5 w-5" />
-                    <div>
-                      <span className="font-medium">{record.employee?.name || 'Unknown Employee'}</span>
-                      <p className="text-sm text-muted-foreground">{record.employee?.employee_id}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {getStatusIcon(record.status)}
-                    <Badge variant={getStatusVariant(record.status)}>
-                      {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
-                    </Badge>
-                  </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Date</p>
-                    <p className="font-medium">{formatJakartaDate(new Date(record.date), { 
-                      weekday: 'short',
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })} WIB</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Start Time</p>
-                    <p className="font-medium">{formatTime(record.start_time)}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">End Time</p>
-                    <p className="font-medium">
-                      {record.end_time ? formatTime(record.end_time) : (
-                        <span className="text-yellow-600">Pending completion</span>
-                      )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Duration</p>
-                    <p className="font-medium">
-                      {record.duration_hours ? `${record.duration_hours} hours` : (
-                        <span className="text-yellow-600">Pending</span>
-                      )}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Type</p>
-                    <p className="font-medium capitalize">{record.overtime_type}</p>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Reason</p>
-                  <p className="text-sm">{record.reason}</p>
-                </div>
-
-                {isIncomplete(record) && (
-                  <div className="border border-yellow-300 bg-yellow-50 p-3 rounded-lg mb-4">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-yellow-600" />
-                      <span className="text-sm font-medium text-yellow-700">
-                        Overtime not completed by employee yet
-                      </span>
-                    </div>
-                    <p className="text-xs text-yellow-600 mt-1">
-                      Employee needs to upload completion evidence before this can be approved.
-                    </p>
-                  </div>
-                )}
-
-                <div className="flex gap-2 pt-4 border-t">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleViewDetail(record)}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Details
-                  </Button>
-                  
-                  {canApprove(record) && (
-                    <>
-                      <Button 
-                        size="sm"
-                        onClick={() => handleApprovalAction(record)}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        Approve
-                      </Button>
-                      <Button 
-                        variant="destructive" 
-                        size="sm"
-                        onClick={() => handleApprovalAction(record)}
-                      >
-                        <XCircle className="h-4 w-4 mr-2" />
-                        Reject
-                      </Button>
-                    </>
-                  )}
-                  
-                  {record.status === 'pending' && isIncomplete(record) && (
-                    <Badge variant="outline" className="text-yellow-600">
-                      Waiting for completion
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {/* Detail Modal */}
-      <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Overtime Details</DialogTitle>
-          </DialogHeader>
-          {selectedRecord && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Employee</p>
-                  <p className="font-medium">{selectedRecord.employee?.name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedRecord.employee?.employee_id}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Department</p>
-                  <p className="font-medium">{selectedRecord.employee?.department || 'N/A'}</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Date</p>
-                  <p className="font-medium">{new Date(selectedRecord.date).toLocaleDateString()}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Overtime Type</p>
-                  <p className="font-medium capitalize">{selectedRecord.overtime_type}</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Start Time</p>
-                  <p className="font-medium">{formatTime(selectedRecord.start_time)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">End Time</p>
-                  <p className="font-medium">{formatTime(selectedRecord.end_time)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Duration</p>
-                  <p className="font-medium">
-                    {selectedRecord.duration_hours ? `${selectedRecord.duration_hours} hours` : 'N/A'}
-                  </p>
-                </div>
-              </div>
-              
-              <div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Reason</p>
-                <p className="text-sm bg-gray-50 p-3 rounded">{selectedRecord.reason}</p>
+            {/* Pagination */}
+            <div className="p-4 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600 gap-2">
+              <span>
+                Showing 1 to {filteredEmployees.length} out of 60 records
+              </span>
+              <div className="flex items-center gap-2">
+                <button className="px-2 py-1 rounded bg-gray-200 text-gray-600" disabled>{'<'}</button>
+                <span>1</span>
+                <button className="px-2 py-1 rounded bg-gray-200 text-gray-600" disabled>{'>'}</button>
               </div>
               
               {selectedRecord.tasks_completed && (
@@ -465,8 +307,12 @@ export default function AdminOvertimePage() {
               Cancel
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+      </div>
+
+
+      <DetailModal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} data={detailData} employee={selectedEmployee} />
+      <FormModal isOpen={formModalOpen} onClose={() => setFormModalOpen(false)} />
+    </>
   );
 }

@@ -1,6 +1,5 @@
 'use client';
 import React from 'react';
-// Import tipe dari lokasi yang benar menggunakan path relatif
 import { Employee, Detail } from '@/app/admin/overtime/types';
 
 // Tipe untuk props komponen DetailModal
