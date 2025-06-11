@@ -93,17 +93,18 @@ export default function ForgotPasswordPage() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
             className={`w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 ${error ? "border-red-500" : ""}`}
-          />
-          {error && <p className="text-sm text-red-700">{error}</p>}
+          />          {error && <p className="text-sm text-red-700">{error}</p>}
+          {successMessage && <p className="text-sm text-green-700">{successMessage}</p>}
         </div>
 
         {/* Reset Password Button */}
         <form onSubmit={handleSubmit}>
           <button
             type="submit"
-            className="w-full bg-red-800 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-lg hover:bg-red-700 transition-all duration-300"
+            disabled={isLoading}
+            className="w-full bg-red-800 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-lg hover:bg-red-700 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Reset password
+            {isLoading ? 'Sending...' : 'Reset password'}
           </button>
         </form>
 

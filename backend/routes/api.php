@@ -8,6 +8,7 @@ use App\Http\Controllers\CheckClockSettingController;
 use App\Http\Controllers\CheckClockSettingTimeController;
 use App\Http\Controllers\LetterFormatController;
 use App\Http\Controllers\LetterController;
+use App\Http\Controllers\OvertimeController;
 
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
@@ -72,4 +73,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/letters/employee/{employeeName}', [LetterController::class, 'getByEmployee']);
     Route::post('/letters/generate-for-employee', [LetterController::class, 'generateForEmployee']);
     Route::get('/available-letter-formats', [LetterController::class, 'getAvailableFormats']);
+    
+    // Overtime routes
+    Route::prefix('overtime')->group(function () {
+        // User routes - can view own overtime and create requests
+        Route::get('/', [OvertimeController::class, 'index']);
+        Route::post('/', [OvertimeController::class, 'store']);
+        Route::get('/{overtime}', [OvertimeController::class, 'show']);
+        Route::put('/{overtime}', [OvertimeController::class, 'update']);
+        Route::delete('/{overtime}', [OvertimeController::class, 'destroy']);
+        Route::post('/{overtime}/complete', [OvertimeController::class, 'complete']);
+        Route::get('/timezone-info', [OvertimeController::class, 'timezoneInfo']);
+        
+        // Admin only routes
+        Route::middleware('admin')->group(function () {
+            Route::post('/{overtime}/approve', [OvertimeController::class, 'approve']);
+            Route::post('/{overtime}/reject', [OvertimeController::class, 'reject']);
+            Route::get('/admin/statistics', [OvertimeController::class, 'statistics']);
+        });
+    });
 });

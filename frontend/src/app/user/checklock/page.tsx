@@ -1,8 +1,10 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import { overtimeService, type OvertimeFormData } from '@/services/overtime';
+import { useToast } from '@/hooks/use-toast';
+import { getJakartaDateString, formatJakartaDate, WORKING_HOURS } from '@/lib/timezone';
 
 export default function ChecklockOverview() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -10,6 +12,9 @@ export default function ChecklockOverview() {
   const [reason, setReason] = useState('');
   const [sendTime, setSendTime] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [overtimeType, setOvertimeType] = useState<'regular' | 'holiday' | 'weekend'>('regular');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -19,9 +24,8 @@ export default function ChecklockOverview() {
     workHoursMin: '',
     workHoursMax: ''
   });
-
   // Sample data with more entries for filtering
-  const [attendanceData, setAttendanceData] = useState([
+  const attendanceData = [
     {
       id: 1,
       date: 'March 01, 2025',
@@ -54,35 +58,68 @@ export default function ChecklockOverview() {
       date: 'March 04, 2025',
       clockIn: '10:15 AM',
       clockOut: '04:45 PM',
-      workHours: '7h 30m',
-      status: 'Late',
+      workHours: '7h 30m',      status: 'Late',
       statusColor: 'red'
     }
-  ]);
-
-  const openModal = () => {
-    const now = new Date();
-    const formattedTime = now.toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-    setSendTime(formattedTime);
+  ];const openModal = () => {
+    // Set default start time to overtime hours (18:00) Jakarta time
+    setSendTime(WORKING_HOURS.OVERTIME_START);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setReason('');
     setIsModalOpen(false);
-  };
-
-  const handleSubmit = (e) => {
+  };  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ reason, sendTime });
-    closeModal();
-  };
+    
+    if (!reason.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please provide a reason for overtime',
+      });
+      return;
+    }
 
-  const handleFilterChange = (key, value) => {
+    if (!sendTime) {
+      toast({
+        title: 'Error',
+        description: 'Please select a start time for overtime',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);    try {
+      const formData: OvertimeFormData = {
+        overtime_date: getJakartaDateString(), // Today's date in Jakarta timezone (YYYY-MM-DD format)
+        start_time: sendTime, // Already in HH:MM format from time input
+        overtime_type: overtimeType,
+        reason: reason.trim(),
+      };
+
+      await overtimeService.createOvertime(formData);
+
+      toast({
+        title: 'Success',
+        description: 'Overtime request submitted successfully! Complete it later by uploading evidence in the "My Overtime" page.',
+      });
+
+      // Reset form
+      setReason('');
+      setSendTime('');
+      setOvertimeType('regular');
+      closeModal();
+    } catch (error) {
+      console.error('Failed to submit overtime request:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit overtime request. Please try again.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({
       ...prev,
       [key]: value
@@ -231,20 +268,19 @@ export default function ChecklockOverview() {
                       <span className={`${item.statusColor === 'green' ? 'bg-green-500' : 'bg-red-600'} text-white px-2 py-1 rounded-full text-xs`}>
                         {item.status}
                       </span>
-                    </td>
-                    <td className="p-2 text-center">
+                    </td>                    <td className="p-2 text-center">
                       <button
                         onClick={openModal}
-                        className="px-2 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                        className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                        title="Request Overtime"
                       >
-                        +
+                        Request OT
                       </button>
                     </td>
                   </tr>
-                ))
-              ) : (
+                ))              ) : (
                 <tr>
-                  <td colSpan="6" className="p-4 text-center text-gray-500">
+                  <td colSpan={6} className="p-4 text-center text-gray-500">
                     No data found matching your filters
                   </td>
                 </tr>
@@ -267,48 +303,87 @@ export default function ChecklockOverview() {
             <button className="px-2 py-1 border rounded">3</button>
           </div>
         </div>
-      </div>
-
-      {/* Modal */}
+      </div>      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">Overtime Form</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
+            <h3 className="text-lg font-semibold mb-4">Overtime Request Form</h3>
+            <form onSubmit={handleSubmit} className="space-y-4">              <div>
                 <label className="text-sm text-gray-700 block mb-1">Date</label>
-                <p className="text-gray-800">{new Date().toLocaleDateString('en-US', {
-                  year: 'numeric', month: 'long', day: '2-digit'
-                })}</p>
+                <p className="text-gray-800 px-3 py-2 bg-gray-50 rounded-md">
+                  {formatJakartaDate(new Date(), { 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: '2-digit',
+                    weekday: 'long'
+                  })} (WIB)
+                </p>
               </div>
+              
               <div>
-                <label className="text-sm text-gray-700 block mb-1">Reason</label>
+                <label className="text-sm text-gray-700 block mb-1">Start Time <span className="text-red-500">*</span></label>
                 <input
-                  type="text"
+                  type="time"
+                  value={sendTime}
+                  onChange={(e) => setSendTime(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-md focus:ring focus:border-blue-300"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Select when you will start working overtime</p>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700 block mb-1">Overtime Type <span className="text-red-500">*</span></label>
+                <select
+                  value={overtimeType}
+                  onChange={(e) => setOvertimeType(e.target.value as 'regular' | 'holiday' | 'weekend')}
+                  className="w-full px-3 py-2 border rounded-md focus:ring focus:border-blue-300"
+                  required
+                >
+                  <option value="regular">Regular Day</option>
+                  <option value="weekend">Weekend</option>
+                  <option value="holiday">Holiday</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="text-sm text-gray-700 block mb-1">Reason <span className="text-red-500">*</span></label>
+                <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md focus:ring focus:border-blue-300"
-                  placeholder="Enter Content For The Letter Type"
+                  className="w-full px-3 py-2 border rounded-md focus:ring focus:border-blue-300 resize-none"
+                  placeholder="Describe the reason for overtime work..."
+                  rows={3}
                   required
                 />
               </div>
-              <div>
-                <label className="text-sm text-gray-700 block mb-1">Time Sending</label>
-                <p className="text-gray-800">{sendTime}</p>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                <div className="flex items-start">
+                  <div className="text-blue-600 mr-2">ℹ️</div>
+                  <div>
+                    <p className="text-sm text-blue-800 font-medium">Important Note:</p>                    <p className="text-xs text-blue-700 mt-1">
+                      You can complete this overtime request later by uploading completion evidence and end time in the &quot;My Overtime&quot; page.
+                    </p>
+                  </div>
+                </div>
               </div>
+              
               <div className="flex justify-end space-x-2 pt-4 border-t">
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-800 text-white rounded hover:bg-blue-900"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-blue-800 text-white rounded hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Submit
+                  {isSubmitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </div>
             </form>

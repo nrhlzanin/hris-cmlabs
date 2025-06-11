@@ -5,15 +5,16 @@ import Link from "next/link";
 import ApprovalModal from "@/app/components/admin/checklock/approval";
 import DetailsModal from "@/app/components/admin/checklock/detailsmodal";
 import { FaCheck, FaTimes } from "react-icons/fa";
+import { formatJakartaDate } from '@/lib/timezone';
 
-// Dummy data for attendance overview
+// Dummy data for attendance overview with Jakarta time formats
 const dummyData = [
   {
     id: 1,
     name: "Juanita",
     position: "CEO",
-    clockIn: "08:00",
-    clockOut: "18:30",
+    clockIn: "08:00 WIB",
+    clockOut: "18:30 WIB",
     workHours: "10h 30m",
     approved: null,
   },
@@ -21,8 +22,8 @@ const dummyData = [
     id: 2,
     name: "Andi",
     position: "Developer",
-    clockIn: "09:00",
-    clockOut: "18:00",
+    clockIn: "09:00 WIB",
+    clockOut: "18:00 WIB",
     workHours: "9h 0m",
     approved: true,
   },
@@ -30,8 +31,8 @@ const dummyData = [
     id: 3,
     name: "Sari",
     position: "Designer",
-    clockIn: "08:30",
-    clockOut: "17:30",
+    clockIn: "08:30 WIB",
+    clockOut: "17:30 WIB",
     workHours: "9h 0m",
     approved: false,
   },
@@ -92,7 +93,18 @@ export default function AttendanceOverview() {
   return (
     <div className="min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8 w-full">
       <div className="w-full max-w-7xl mx-auto bg-white rounded shadow p-6">
-        <h2 className="text-2xl font-semibold mb-4">Checklock Overview</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-semibold">Attendance Overview</h2>
+          <div className="text-right text-sm text-gray-600">
+            <p>Today: {formatJakartaDate(new Date(), {
+              weekday: 'short',
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })} WIB</p>
+            <p className="text-xs">All times shown in Jakarta timezone</p>
+          </div>
+        </div>
 
         <div className="flex justify-between mb-4 flex-wrap gap-2">
           <input

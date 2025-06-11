@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -18,9 +17,7 @@ export default function SignInForm() {
     const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        let newErrors = {
+        e.preventDefault();        const newErrors = {
             email: "",
             password: "",
             general: "",

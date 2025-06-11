@@ -1,6 +1,22 @@
+'use client';
+
+import { formatJakartaDate } from '@/lib/timezone';
 import React from "react";
 
 export default function ProfilePage() {
+  // Format dates using Jakarta timezone
+  const startDate = formatJakartaDate(new Date('2045-12-30'), {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+
+  const lastUpdate = formatJakartaDate(new Date(Date.now() - 24 * 60 * 60 * 1000), {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+
   return (
     <div className="bg-gray-100 min-h-screen py-10">
       <div className="p-6 max-w-5xl mx-auto font-sans space-y-6">
@@ -22,7 +38,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <h2 className="text-xl font-bold">Anindya Nurhaliza Putri</h2>
-              <p className="text-xs text-gray-500">Last update 1 day ago</p>
+              <p className="text-xs text-gray-500">Last update {lastUpdate} WIB</p>
             </div>
           </div>
 
@@ -45,7 +61,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <p className="font-semibold">Start Date</p>
-              <p>Dec 32, 2045</p>
+              <p>{startDate} WIB</p>
             </div>
             <div>
               <p className="font-semibold">Branch</p>

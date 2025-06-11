@@ -43,7 +43,6 @@ class AdminSeeder extends Seeder
             'email' => 'superadmin@hris.com',
             'email_verified_at' => now(),
             'password' => Hash::make('SuperAdmin123#'),
-            'is_active' => true,
         ]);
 
         // Create Regular Admin
@@ -74,7 +73,6 @@ class AdminSeeder extends Seeder
             'email' => 'admin@hris.com',
             'email_verified_at' => now(),
             'password' => Hash::make('Admin123#'),
-            'is_active' => true,
         ]);
 
         // Create HR Manager (Admin role)
@@ -105,7 +103,6 @@ class AdminSeeder extends Seeder
             'email' => 'hr.manager@hris.com',
             'email_verified_at' => now(),
             'password' => Hash::make('HRManager123#'),
-            'is_active' => true,
         ]);
 
         // Create IT Admin (Super Admin role)
@@ -136,7 +133,6 @@ class AdminSeeder extends Seeder
             'email' => 'it.admin@hris.com',
             'email_verified_at' => now(),
             'password' => Hash::make('ITAdmin123#'),
-            'is_active' => true,
         ]);
 
         // Create Branch Manager (Admin role)
@@ -167,7 +163,6 @@ class AdminSeeder extends Seeder
             'email' => 'branch.manager@hris.com',
             'email_verified_at' => now(),
             'password' => Hash::make('BranchManager123#'),
-            'is_active' => true,
         ]);
 
         $this->command->info('Admin users created successfully!');

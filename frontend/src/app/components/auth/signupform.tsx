@@ -26,9 +26,7 @@ export default function SignUpForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    let newErrors = {
+    e.preventDefault();        const newErrors = {
       firstName: "",
       lastName: "",
       email: "",

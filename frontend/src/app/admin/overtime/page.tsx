@@ -1,44 +1,139 @@
 ﻿'use client';
-import React, { useState } from 'react';
-import DetailModal from '@/app/components/admin/overtime/detailmodal';
-import FormModal from '@/app/components/admin/overtime/formmodal';
-import { Employee, Detail } from './types';
 
-const employees: Employee[] = [
-  { id: 1, name: 'Puma Pumil', position: 'OB', branch: 'Bekasi', grade: 'Management', status: 'Waiting Approval' },
-  { id: 2, name: 'Dika Dikut', position: '02 Mei 2025', branch: '10.000.952', grade: 'Part Time', status: 'Approved' },
-  { id: 3, name: 'Anin Pulu-Pulu', position: '02 Mei 2025', branch: '10.000.952', grade: 'Part Time', status: 'Decline' },
-  { id: 4, name: 'Febi Jogijay', position: '02 Mei 2025', branch: '10.000.952', grade: 'Part Time', status: 'Waiting Approval' },
-  { id: 5, name: 'Puma Pumil', position: '02 Mei 2025', branch: '10.000.952', grade: 'Part Time', status: 'Waiting Approval' },
-  { id: 6, name: 'Dika Dikut', position: '02 Mei 2025', branch: '10.000.952', grade: 'Part 99Time', status: 'Waiting Approval' },
-];
+import { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Eye, User } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { overtimeService, type OvertimeRecord } from '@/services/overtime';
+import { formatJakartaDate, formatJakartaTime } from '@/lib/timezone';
 
-const statusColor: Record<Employee['status'], string> = {
-  'Waiting Payment': 'bg-yellow-100 text-yellow-800',
-  Approved: 'bg-green-100 text-green-800',
-  Decline: 'bg-red-100 text-red-800',
-  'Waiting Approval': 'bg-orange-100 text-orange-800',
-};
+export default function AdminOvertimePage() {
+  const [overtimeRecords, setOvertimeRecords] = useState<OvertimeRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedRecord, setSelectedRecord] = useState<OvertimeRecord | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    search: '',
+    status: '',
+    date_from: '',
+    date_to: ''
+  });
+  const [submitting, setSubmitting] = useState(false);  const { toast } = useToast();
 
-const detailData: Detail[] = [
-  { no: 1, date: 'August, 15 2025', action: <div className="flex gap-1 justify-center"><span className="bg-green-600 text-white px-2 py-1 rounded">✔</span><span className="bg-red-600 text-white px-2 py-1 rounded">✘</span></div>, detail: 'Mengerjakan laporan bulanan.' },
-  { no: 2, date: 'August, 10 2025', action: <span className="bg-yellow-400 text-white px-2 py-1 rounded">Done</span>, detail: 'Meeting dengan klien.' },
-  { no: 3, date: 'August, 05 2025', action: <span className="bg-red-500 text-white px-2 py-1 rounded">Decline</span>, detail: '' },
-  { no: 4, date: 'July, 19 2025', action: <span className="bg-green-600 text-white px-2 py-1 rounded">Accepted</span>, detail: '' },
-];
+  const loadOvertimeRecords = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await overtimeService.getOvertimeRecords({
+        search: filters.search || undefined,
+        status: (filters.status as 'pending' | 'approved' | 'rejected') || undefined,
+        date_from: filters.date_from || undefined,
+        date_to: filters.date_to || undefined,
+        per_page: 50
+      });      setOvertimeRecords(response.data);    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to load overtime records',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, toast]);
 
-export default function OvertimeOverview() {
-  const [search, setSearch] = useState<string>('');
-  const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
-  const [formModalOpen, setFormModalOpen] = useState<boolean>(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  useEffect(() => {
+    loadOvertimeRecords();
+  }, [loadOvertimeRecords]);
 
-  const filteredEmployees = employees.filter((emp) => emp.name.toLowerCase().includes(search.toLowerCase()));
-
-  const handleViewDetails = (employee: Employee) => {
-    setSelectedEmployee(employee);
+  const handleViewDetail = (record: OvertimeRecord) => {
+    setSelectedRecord(record);
     setDetailModalOpen(true);
   };
+  const handleApprovalAction = (record: OvertimeRecord) => {
+    setSelectedRecord(record);
+    setApprovalModalOpen(true);
+  };
+
+  const handleSubmitApproval = async (status: 'approved' | 'rejected', remarks?: string) => {
+    if (!selectedRecord) return;
+
+    try {
+      setSubmitting(true);
+      await overtimeService.updateOvertimeStatus(selectedRecord.id, {
+        status,
+        admin_remarks: remarks
+      });
+
+      toast({
+        title: 'Success',
+        description: `Overtime request ${status} successfully`,
+      });      setApprovalModalOpen(false);
+      loadOvertimeRecords();    } catch {
+      toast({
+        title: 'Error',
+        description: `Failed to ${status === 'approved' ? 'approve' : 'reject'} overtime request`,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'rejected':
+        return <XCircle className="h-5 w-5 text-red-500" />;
+      case 'pending':
+        return <Clock className="h-5 w-5 text-yellow-500" />;
+      default:
+        return <AlertCircle className="h-5 w-5 text-blue-500" />;
+    }
+  };
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return 'default' as const;
+      case 'rejected':
+        return 'destructive' as const;
+      case 'pending':
+        return 'secondary' as const;
+      default:
+        return 'outline' as const;
+    }
+  };
+  const formatTime = (timeString: string | null) => {
+    if (!timeString) return 'Not set';
+    // Create a date object with the time in Jakarta timezone
+    const date = new Date(`1970-01-01T${timeString}`);
+    return formatJakartaTime(date);
+  };
+
+  const isIncomplete = (overtime: OvertimeRecord) => {
+    return !overtime.end_time;
+  };
+
+  const canApprove = (overtime: OvertimeRecord) => {
+    return overtime.status === 'pending' && !isIncomplete(overtime);
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Clock className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p>Loading overtime records...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -129,7 +224,88 @@ export default function OvertimeOverview() {
                 <span>1</span>
                 <button className="px-2 py-1 rounded bg-gray-200 text-gray-600" disabled>{'>'}</button>
               </div>
+              
+              {selectedRecord.tasks_completed && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Tasks Completed</p>
+                  <p className="text-sm bg-gray-50 p-3 rounded">{selectedRecord.tasks_completed}</p>
+                </div>
+              )}
+              
+              {selectedRecord.supporting_document_url && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Supporting Document</p>
+                  <Button variant="outline" size="sm" asChild>
+                    <a href={selectedRecord.supporting_document_url} target="_blank" rel="noopener noreferrer">
+                      <FileText className="h-4 w-4 mr-2" />
+                      View Document
+                    </a>
+                  </Button>
+                </div>
+              )}
+              
+              {selectedRecord.admin_remarks && (
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Admin Remarks</p>
+                  <p className="text-sm bg-blue-50 p-3 rounded border-l-4 border-blue-400">
+                    {selectedRecord.admin_remarks}
+                  </p>
+                </div>
+              )}
             </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Approval Modal */}
+      <Dialog open={approvalModalOpen} onOpenChange={setApprovalModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Approve/Reject Overtime</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-sm">
+              <p><strong>Employee:</strong> {selectedRecord?.employee?.name}</p>
+              <p><strong>Date:</strong> {selectedRecord ? new Date(selectedRecord.date).toLocaleDateString() : ''}</p>
+              <p><strong>Duration:</strong> {selectedRecord?.duration_hours} hours</p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => handleSubmitApproval('approved')}
+                disabled={submitting}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {submitting ? (
+                  <Clock className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                )}
+                Approve
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => handleSubmitApproval('rejected')}
+                disabled={submitting}
+                className="flex-1"
+              >
+                {submitting ? (
+                  <Clock className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <XCircle className="h-4 w-4 mr-2" />
+                )}
+                Reject
+              </Button>
+            </div>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setApprovalModalOpen(false)}
+              disabled={submitting}
+              className="w-full"
+            >
+              Cancel
+            </Button>
           </div>
         </div>
       </div>

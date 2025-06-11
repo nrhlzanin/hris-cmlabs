@@ -1,30 +1,42 @@
 'use client';
 import React, { useState } from 'react';
-import {
-  PlusIcon,
-  DocumentTextIcon,
-  EyeIcon
-} from '@heroicons/react/24/solid';
+import { formatJakartaDate } from '@/lib/timezone';
 
-import { Letter, LetterType } from './types';
-import AddLetter from '../../components/admin/letter/addletter';
-import AddLetterType from '../../components/admin/letter/addlettertype';
-import ViewLetter from '../../components/admin/letter/viewletter';
-import ViewHistory from '../../components/admin/letter/viewhistory';
+// Define the letter type
+type Letter = {
+  id: number;
+  name: string;
+  letterName: string;
+  letterType: string;
+  validUntil: string;
+  status: string;
+  history: Array<{
+    date: string;
+    status: string;
+    description: string;
+  }>;
+};
 
-const initialLetters: Letter[] = [
+// Updated letters data with Jakarta timezone formatting
+const lettersData: Letter[] = [
   {
     id: 1,
     name: 'Puma Pumi',
     letterName: 'Surat Sakit',
     letterType: 'Absensi',
-    validUntil: '17 March 2023',
+    validUntil: formatJakartaDate(new Date('2023-03-17'), {
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric'
+    }) + ' WIB',
     status: 'Waiting Reviewed',
     history: [
-      { date: 'August, 15 2025', status: 'Waiting Reviewed', description: 'Sakit Hati Pak' },
-      { date: 'August, 10 2025', status: 'Done', description: '' },
-      { date: 'August, 05 2025', status: 'Decline', description: '' },
-      { date: 'July, 19 2025', status: 'Accepted', description: '' },
+      { date: formatJakartaDate(new Date('2025-08-15'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: 'Waiting Reviewed', description: 'Sakit Hati Pak' },
+      { date: formatJakartaDate(new Date('2025-08-10'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: 'Done', description: '' },
+      { date: formatJakartaDate(new Date('2025-08-05'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: 'Decline', description: '' },
+      { date: formatJakartaDate(new Date('2025-07-19'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: 'Accepted', description: '' },
+      { date: formatJakartaDate(new Date('2025-06-20'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: '', description: '' },
+      { date: formatJakartaDate(new Date('2024-09-30'), { year: 'numeric', month: 'long', day: 'numeric' }) + ' WIB', status: '', description: '' },
     ],
   },
   {
@@ -32,7 +44,11 @@ const initialLetters: Letter[] = [
     name: 'Dika Dikut',
     letterName: 'Surat Sakit',
     letterType: 'Absensi',
-    validUntil: '17 March 2023',
+    validUntil: formatJakartaDate(new Date('2023-03-17'), {
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric'
+    }) + ' WIB',
     status: 'Approved',
     history: [],
   },
@@ -41,7 +57,11 @@ const initialLetters: Letter[] = [
     name: 'Anin Pulu-Pulu',
     letterName: 'Surat Sakit',
     letterType: 'Absensi',
-    validUntil: '17 March 2023',
+    validUntil: formatJakartaDate(new Date('2023-03-17'), {
+      year: 'numeric',
+      month: 'long', 
+      day: 'numeric'
+    }) + ' WIB',
     status: 'Decline',
     history: [],
   },
@@ -57,9 +77,7 @@ const getStatusColor = (status: string) => {
 };
 
 export default function LettersOverview() {
-  const [letters, setLetters] = useState<Letter[]>(initialLetters);
   const [selectedLetter, setSelectedLetter] = useState<Letter | null>(null);
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showLetterModal, setShowLetterModal] = useState(false);
   const [showTypeModal, setShowTypeModal] = useState(false);
@@ -101,42 +119,31 @@ export default function LettersOverview() {
   };
 
   return (
-    <>
-      <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto bg-white rounded-xl shadow-md p-6">
-          {/* HEADER */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <h1 className="text-2xl font-bold text-gray-800">Letters Overview</h1>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <input
-                type="text"
-                placeholder="Search Employee..."
-                className="w-full sm:w-auto border border-gray-300 rounded-lg shadow-sm px-3 py-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <button
-                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg shadow-md flex items-center justify-center gap-2 text-sm"
-                onClick={() => setShowLetterModal(true)}
-              >
-                <PlusIcon className="h-5 w-5" />
-                <span>Add Letter</span>
-              </button>
-              <button
-                className="w-full sm:w-auto bg-gray-700 hover:bg-gray-800 text-white px-3 py-2 rounded-lg shadow-md flex items-center justify-center gap-2 text-sm"
-                onClick={handleAddNewType}
-              >
-                <PlusIcon className="h-5 w-5" />
-                <span>Add Type</span>
-              </button>
-              <button
-                className="w-full sm:w-auto bg-gray-700 hover:bg-gray-800 text-white px-3 py-2 rounded-lg shadow-md flex items-center justify-center gap-2 text-sm"
-                onClick={() => setShowTypeOverviewModal(true)}
-              >
-                <DocumentTextIcon className="h-5 w-5" />
-                <span>View Types</span>
-              </button>
-            </div>
+    <div className="min-h-screen bg-gray-100 py-8 px-4">
+      <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-md p-6">
+        {/* HEADER */}
+        <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
+          <h1 className="text-xl font-bold">Letters Overview</h1>
+          <div className="text-sm text-gray-600">
+            All dates shown in Jakarta timezone (WIB)
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <input
+              type="text"
+              placeholder="Search Employee"
+              className="border rounded px-2 py-1"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button className="bg-blue-500 text-white px-4 py-2 rounded text-sm" onClick={() => setShowLetterModal(true)}>
+              ➕ Add Letter
+            </button>
+            <button className="bg-gray-300 text-black px-4 py-2 rounded text-sm" onClick={() => setShowTypeModal(true)}>
+              ➕ Add Letter Type
+            </button>
+            <button className="bg-gray-300 text-black px-4 py-2 rounded text-sm" onClick={() => setShowTypeOverviewModal(true)}>
+              📄 View Letter Types
+            </button>
           </div>
 
           {/* TABLE */}
@@ -177,9 +184,27 @@ export default function LettersOverview() {
                       </button>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                ))
+              ) : (
+                <tr>
+                  <td className="px-4 py-4 text-center text-gray-500" colSpan={6}>No matching data found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* PAGINATION */}
+        <div className="flex justify-between items-center mt-4 text-sm text-gray-600">
+          <div>
+            Showing <strong>1 to 10</strong> out of <strong>60</strong> records
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="px-2 py-1 border rounded disabled:opacity-50" disabled>{'<'}</button>
+            <button className="px-3 py-1 bg-blue-500 text-white rounded">1</button>
+            <button className="px-3 py-1 border rounded">2</button>
+            <button className="px-3 py-1 border rounded">3</button>
+            <button className="px-2 py-1 border rounded">{'>'}</button>
           </div>
         </div>
       </div>

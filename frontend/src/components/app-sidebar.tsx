@@ -1,5 +1,4 @@
 'use client'
-import { useSidebar } from "@/components/ui/sidebar"
 import * as React from "react"
 import Image from "next/image"
 import {
@@ -17,6 +16,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { CompactTimeWidget } from "@/components/TimeWidget"
 
 const data = {
   title: "HRIS",
@@ -51,11 +51,8 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { state } = useSidebar()
-
   return (
-    <Sidebar collapsible="icon" {...props} className="lg:w-64 w-full">
-      <SidebarHeader>
+    <Sidebar collapsible="icon" {...props} className="lg:w-64 w-full"><SidebarHeader>
         <div className="p-4 flex items-center justify-center">
           <Image
             src="/img/logo/Logo HRIS-1.png"
@@ -65,6 +62,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             className="transition-all duration-300 object-contain w-auto h-auto"
             priority
           />
+        </div>
+        {/* Jakarta Time Widget */}
+        <div className="px-4 pb-2">
+          <CompactTimeWidget className="justify-center text-xs" />
         </div>
       </SidebarHeader>
       <SidebarContent>
