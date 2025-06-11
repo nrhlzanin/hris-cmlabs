@@ -6,6 +6,8 @@ import ApprovalModal from "@/app/components/admin/checklock/approval";
 import DetailsModal from "@/app/components/admin/checklock/detailsmodal";
 import { FaCheck, FaTimes } from "react-icons/fa";
 import { formatJakartaDate } from '@/lib/timezone';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
 
 // Dummy data for attendance overview with Jakarta time formats
 const dummyData = [
@@ -89,9 +91,10 @@ export default function AttendanceOverview() {
   );
 
   const selectedData = attendanceList.find((item) => item.id === selectedId);
-
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8 w-full">
+    <AuthWrapper requireAdmin={true}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8 w-full">
       <div className="w-full max-w-7xl mx-auto bg-white rounded shadow p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-semibold">Attendance Overview</h2>
@@ -226,9 +229,10 @@ export default function AttendanceOverview() {
         <DetailsModal
           isOpen={isDetailsOpen}
           selectedData={selectedData}
-          closeModal={closeDetailsModal}
-        />
+          closeModal={closeDetailsModal}        />
       )}
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }

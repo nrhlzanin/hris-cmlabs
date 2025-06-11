@@ -42,10 +42,9 @@ export function useTimezone() {
 
   useEffect(() => {
     const fetchTimezoneInfo = async () => {
-      try {
-        const response = await fetch('/api/overtime/timezone-info', {
+      try {        const response = await fetch('/api/overtime/timezone-info', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
             'Accept': 'application/json',
           },
         });

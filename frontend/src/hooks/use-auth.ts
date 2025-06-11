@@ -18,6 +18,21 @@ export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshUser = async (): Promise<void> => {
+    try {
+      const response = await authService.getProfile();
+      if (response.success && response.data) {
+        setUser(response.data.user);
+        authService.setUserData(response.data.user);
+      }
+    } catch (error) {
+      console.error('Refresh user error:', error);
+      // If profile fetch fails, clear auth state
+      setUser(null);
+      authService.removeToken();
+    }
+  };
+
   // Initialize auth state
   useEffect(() => {
     const initAuth = async () => {
@@ -69,21 +84,6 @@ export function useAuth(): UseAuthReturn {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      setUser(null);
-      authService.removeToken();
-    }
-  };
-
-  const refreshUser = async (): Promise<void> => {
-    try {
-      const response = await authService.getProfile();
-      if (response.success && response.data) {
-        setUser(response.data.user);
-        authService.setUserData(response.data.user);
-      }
-    } catch (error) {
-      console.error('Refresh user error:', error);
-      // If profile fetch fails, clear auth state
       setUser(null);
       authService.removeToken();
     }

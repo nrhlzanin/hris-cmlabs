@@ -1,7 +1,7 @@
 <?php
 echo "=== COMPREHENSIVE LETTER SYSTEM API TEST ===\n\n";
 
-$baseUrl = 'http://127.0.0.1:8001/api';
+$baseUrl = 'http://127.0.0.1:8000/api';
 
 // Helper function for API calls
 function makeApiCall($method, $url, $data = null, $token = null) {
@@ -33,10 +33,10 @@ function makeApiCall($method, $url, $data = null, $token = null) {
 
 // Test 1: Authentication
 echo "1. 🔐 TESTING AUTHENTICATION\n";
-echo "   → Logging in as admin...\n";
+echo "   → Logging in as test user...\n";
 $loginResult = makeApiCall('POST', $baseUrl . '/login', [
-    'login' => 'admin@cmlabs.com',
-    'password' => 'password123'
+    'login' => 'test@test.com',
+    'password' => 'test123'
 ]);
 
 if ($loginResult['code'] === 200 && isset($loginResult['response']['data']['token'])) {

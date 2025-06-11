@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { overtimeService, type OvertimeFormData } from '@/services/overtime';
 import { useToast } from '@/hooks/use-toast';
 import { getJakartaDateString, formatJakartaDate, WORKING_HOURS } from '@/lib/timezone';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
 
 export default function ChecklockOverview() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -155,9 +157,10 @@ export default function ChecklockOverview() {
 
     return matchesSearch && matchesStatus && matchesDateRange;
   });
-
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <AuthWrapper requireAdmin={false}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-100 p-6">
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Checklock Overview</h2>
@@ -275,10 +278,9 @@ export default function ChecklockOverview() {
                         title="Request Overtime"
                       >
                         Request OT
-                      </button>
-                    </td>
+                      </button>                    </td>
                   </tr>
-                ))              ) : (
+                ))) : (
                 <tr>
                   <td colSpan={6} className="p-4 text-center text-gray-500">
                     No data found matching your filters
@@ -386,10 +388,11 @@ export default function ChecklockOverview() {
                   {isSubmitting ? 'Submitting...' : 'Submit Request'}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
+            </form>        </div>
+      </div>
       )}
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }

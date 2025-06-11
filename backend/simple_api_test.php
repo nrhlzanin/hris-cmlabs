@@ -1,13 +1,13 @@
 <?php
 echo "=== Testing HRIS Letter API ===\n\n";
 
-$baseUrl = 'http://127.0.0.1:8001/api';
+$baseUrl = 'http://127.0.0.1:8000/api';
 
 // Test 1: Login
 echo "1. Testing Login\n";
 $loginData = json_encode([
-    'login' => 'admin@cmlabs.com',
-    'password' => 'password123'
+    'login' => 'test@test.com',
+    'password' => 'test123'
 ]);
 
 $ch = curl_init();

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { formatJakartaDate, formatJakartaDateTime, getJakartaTime } from '@/lib/timezone';
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
 
 interface Letter {
   id: number;
@@ -67,9 +69,10 @@ export default function UserLetterPage() {
         return 'text-gray-600 bg-gray-100';
     }
   };
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AuthWrapper requireAdmin={false}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-4">
@@ -154,10 +157,11 @@ export default function UserLetterPage() {
                   )}
                 </tbody>
               </table>
-            </div>
-          )}
+            </div>        )}
         </div>
       </div>
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }

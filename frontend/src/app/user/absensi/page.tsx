@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
 
 // Dynamic import untuk Leaflet (hanya di client side)
 const MapComponent = dynamic(() => import('./MapComponent'), {
@@ -224,11 +226,9 @@ export default function AbsensiForm() {
       return;
     }
 
-    setIsLoading(true);
-
-    try {
+    setIsLoading(true);    try {
       // Check if we have a token
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       if (!token) {
         setSubmitError('Authentication required. Please login first.');
         setIsLoading(false);
@@ -284,10 +284,11 @@ export default function AbsensiForm() {
       setIsLoading(false);
     }
   };
-
   return (
-    <div className="p-6 overflow-auto min-h-screen bg-gray-100">
-      <div className="bg-white p-6 rounded shadow-lg max-w-6xl mx-auto">
+    <AuthWrapper requireAdmin={false}>
+      <DashboardLayout>
+        <div className="p-6 overflow-auto min-h-screen bg-gray-100">
+        <div className="bg-white p-6 rounded shadow-lg max-w-6xl mx-auto">
         <h2 className="text-2xl font-semibold mb-4">Add Attendance</h2>
         
         {submitError && (
@@ -464,9 +465,10 @@ export default function AbsensiForm() {
             >
               {isLoading ? 'Saving...' : 'Save'}
             </button>
-          </div>
-        </form>
+          </div>        </form>
       </div>
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }

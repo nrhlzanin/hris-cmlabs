@@ -14,7 +14,7 @@ use Carbon\Carbon;
 class OvertimeController extends Controller
 {
     /**
-     * Get all overtime requests with pagination and filters
+     * Get all overtime requests with pagination and filters - OPTIMIZED FOR SPEED
      */
     public function index(Request $request): JsonResponse
     {
@@ -22,7 +22,8 @@ class OvertimeController extends Controller
         
         // For regular users, only show their own overtime requests
         // For admins, show all overtime requests
-        $query = Overtime::with(['user.employee', 'approver.employee']);
+        // OPTIMIZATION: Use eager loading with simple relationships for speed
+        $query = Overtime::with(['user', 'user.employee', 'approver']);
         
         if (!$user->isAdmin()) {
             $query->byUser($user->id_users);
@@ -59,21 +60,36 @@ class OvertimeController extends Controller
         }
 
         $perPage = $request->get('per_page', 10);
-        $overtimes = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        
+        // OPTIMIZATION: Use overtime_date for sorting (more relevant) and add index hint
+        $sortBy = $request->get('sort_by', 'overtime_date');
+        $sortOrder = $request->get('sort_order', 'desc');
+        
+        // Ensure valid sort columns to prevent SQL injection
+        $allowedSortColumns = ['overtime_date', 'created_at', 'status', 'start_time'];
+        if (!in_array($sortBy, $allowedSortColumns)) {
+            $sortBy = 'overtime_date';
+        }
+        
+        $overtimes = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
 
         return response()->json([
             'success' => true,
             'message' => 'Overtime requests retrieved successfully',
-            'data' => [
-                'overtimes' => $overtimes->items(),
-                'pagination' => [
-                    'current_page' => $overtimes->currentPage(),
-                    'last_page' => $overtimes->lastPage(),
-                    'per_page' => $overtimes->perPage(),
-                    'total' => $overtimes->total(),
-                    'from' => $overtimes->firstItem(),
-                    'to' => $overtimes->lastItem(),
-                ]
+            'data' => $overtimes->items(),
+            'pagination' => [
+                'current_page' => $overtimes->currentPage(),
+                'last_page' => $overtimes->lastPage(),
+                'per_page' => $overtimes->perPage(),
+                'total' => $overtimes->total(),
+                'from' => $overtimes->firstItem(),
+                'to' => $overtimes->lastItem(),
+            ],
+            'links' => [
+                'first' => $overtimes->url(1),
+                'last' => $overtimes->url($overtimes->lastPage()),
+                'prev' => $overtimes->previousPageUrl(),
+                'next' => $overtimes->nextPageUrl(),
             ]
         ], 200);
     }

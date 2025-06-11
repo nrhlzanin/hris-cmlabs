@@ -2,13 +2,16 @@
 
 import { BarChart, Calendar, CheckCircle, Clock, Users, FileText, TrendingUp, AlertCircle } from "lucide-react";
 import { useJakartaTime, useWorkingHours } from '@/hooks/use-timezone';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
 
 export default function DashboardPage() {
   const jakartaTime = useJakartaTime();
   const { isWorkingHours, isOvertimeHours } = useWorkingHours();
-
   return (
-    <div className="flex flex-col gap-6 p-6">
+    <AuthWrapper requireAdmin={true}>
+      <DashboardLayout>
+        <div className="flex flex-col gap-6 p-6">
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl p-6">
         <div className="flex justify-between items-start">
@@ -209,12 +212,13 @@ export default function DashboardPage() {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-100 rounded-full mb-4">
                 <Clock className="h-8 w-8 text-yellow-600" />
               </div>
-              <h4 className="text-2xl font-bold text-gray-900">7</h4>
-              <p className="text-sm text-gray-600">Late</p>
+              <h4 className="text-2xl font-bold text-gray-900">7</h4>              <p className="text-sm text-gray-600">Late</p>
             </div>
           </div>
         </div>
       </div>
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }

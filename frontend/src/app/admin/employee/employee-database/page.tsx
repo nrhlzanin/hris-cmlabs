@@ -1,6 +1,8 @@
 ﻿'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
 
 interface Employee {
   nik: string;
@@ -418,9 +420,10 @@ export default function EmployeeTable() {
       </div>
     );
   }
-
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
+    <AuthWrapper requireAdmin={true}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-100 py-10">
       <div className="max-w-7xl mx-auto px-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -968,9 +971,10 @@ export default function EmployeeTable() {
                 </>
               )}
             </div>
-          </div>
-        )}
+          </div>        )}
       </div>
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }

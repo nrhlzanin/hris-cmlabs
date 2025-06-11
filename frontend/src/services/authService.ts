@@ -113,40 +113,49 @@ class AuthService {
       throw error;
     }
   }
-
   // Token Management
   getToken(): string | null {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('auth_token');
+      return localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     }
     return null;
   }
 
-  setToken(token: string): void {
+  setToken(token: string, remember: boolean = true): void {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('auth_token', token);
+      const storage = remember ? localStorage : sessionStorage;
+      storage.setItem('auth_token', token);
+      // Remove from the other storage
+      const otherStorage = remember ? sessionStorage : localStorage;
+      otherStorage.removeItem('auth_token');
     }
   }
 
   removeToken(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_token');
       localStorage.removeItem('user_data');
+      sessionStorage.removeItem('user_data');
     }
   }
 
   // User Data Management
   getUserData(): User | null {
     if (typeof window !== 'undefined') {
-      const userData = localStorage.getItem('user_data');
+      const userData = localStorage.getItem('user_data') || sessionStorage.getItem('user_data');
       return userData ? JSON.parse(userData) : null;
     }
     return null;
   }
 
-  setUserData(user: User): void {
+  setUserData(user: User, remember: boolean = true): void {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('user_data', JSON.stringify(user));
+      const storage = remember ? localStorage : sessionStorage;
+      storage.setItem('user_data', JSON.stringify(user));
+      // Remove from the other storage
+      const otherStorage = remember ? sessionStorage : localStorage;
+      otherStorage.removeItem('user_data');
     }
   }
 
@@ -179,7 +188,6 @@ class AuthService {
 
     return response;
   }
-
   async login(data: LoginData): Promise<AuthResponse> {
     const response = await this.makeRequest('/login', {
       method: 'POST',
@@ -187,8 +195,9 @@ class AuthService {
     });
 
     if (response.success && response.data) {
-      this.setToken(response.data.token);
-      this.setUserData(response.data.user);
+      const remember = data.remember || false;
+      this.setToken(response.data.token, remember);
+      this.setUserData(response.data.user, remember);
     }
 
     return response;
