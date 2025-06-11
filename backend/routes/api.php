@@ -32,6 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth routes
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::post('/refresh-token', [AuthController::class, 'refreshToken']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/logout-all-devices', [AuthController::class, 'logoutFromAllDevices']);
     

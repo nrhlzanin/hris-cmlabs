@@ -360,6 +360,40 @@ class AuthController extends Controller
     }
 
     /**
+     * Refresh token - create a new token for the authenticated user
+     */
+    public function refreshToken(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            
+            // Create a new token for the user
+            $token = $user->createToken('auth_token')->plainTextToken;
+            
+            // Get updated profile data
+            $profileData = $this->authService->getUserProfile($user);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token refreshed successfully.',
+                'data' => [
+                    'user' => $profileData['user'],
+                    'employee' => $profileData['employee'],
+                    'token' => $token,
+                    'token_type' => 'Bearer'
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to refresh token.',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+            ], 500);
+        }
+    }
+
+    /**
      * Logout from all devices
      */
     public function logoutFromAllDevices(Request $request): JsonResponse

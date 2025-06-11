@@ -123,11 +123,8 @@ class AuthService {
 
   setToken(token: string, remember: boolean = true): void {
     if (typeof window !== 'undefined') {
-      const storage = remember ? localStorage : sessionStorage;
-      storage.setItem('auth_token', token);
-      // Remove from the other storage
-      const otherStorage = remember ? sessionStorage : localStorage;
-      otherStorage.removeItem('auth_token');
+      localStorage.setItem('auth_token', token);
+      sessionStorage.setItem('auth_token', token);
     }
   }
 
@@ -136,10 +133,12 @@ class AuthService {
       localStorage.removeItem('auth_token');
       sessionStorage.removeItem('auth_token');
       localStorage.removeItem('user_data');
+      localStorage.removeItem('session_data');
+      sessionStorage.removeItem('auth_token');
       sessionStorage.removeItem('user_data');
+      sessionStorage.removeItem('session_data');
     }
   }
-
   // User Data Management
   getUserData(): User | null {
     if (typeof window !== 'undefined') {
@@ -151,11 +150,8 @@ class AuthService {
 
   setUserData(user: User, remember: boolean = true): void {
     if (typeof window !== 'undefined') {
-      const storage = remember ? localStorage : sessionStorage;
-      storage.setItem('user_data', JSON.stringify(user));
-      // Remove from the other storage
-      const otherStorage = remember ? sessionStorage : localStorage;
-      otherStorage.removeItem('user_data');
+      localStorage.setItem('user_data', JSON.stringify(user));
+      sessionStorage.setItem('user_data', JSON.stringify(user));
     }
   }
 
@@ -245,7 +241,6 @@ class AuthService {
       body: JSON.stringify(data),
     });
   }
-
   async logout(): Promise<AuthResponse> {
     try {
       const response = await this.makeRequest('/logout', {
@@ -257,6 +252,26 @@ class AuthService {
       return response;
     } catch (error) {
       // Even if the API call fails, remove local tokens
+      this.removeToken();
+      throw error;
+    }
+  }
+
+  async refreshToken(): Promise<AuthResponse> {
+    try {
+      const response = await this.makeRequest('/refresh-token', {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (response.success && response.data) {
+        this.setToken(response.data.token);
+        this.setUserData(response.data.user);
+      }
+
+      return response;
+    } catch (error) {
+      // If refresh fails, user needs to login again
       this.removeToken();
       throw error;
     }
