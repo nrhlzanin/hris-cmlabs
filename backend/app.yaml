@@ -1,0 +1,20 @@
+runtime: php82
+
+env_variables:
+  APP_ENV: production
+  APP_DEBUG: false
+  APP_KEY: base64:YourAppKeyHere # You'll need to generate this
+  DB_CONNECTION: mysql
+  DB_HOST: 127.0.0.1
+  DB_PORT: 3306
+  DB_DATABASE: your_database_name
+  DB_USERNAME: your_database_user
+  DB_PASSWORD: your_database_password
+  
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
+
+handlers:
+  - url: /.*
+    script: public/index.php
