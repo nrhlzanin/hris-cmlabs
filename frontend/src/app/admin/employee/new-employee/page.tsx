@@ -2,6 +2,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import AuthWrapper from '@/components/auth/AuthWrapper';
+import DashboardLayout from '@/components/layout/DashboardLayout';
 
 interface FormData {
   first_name: string;
@@ -58,7 +60,7 @@ export default function AddEmployeeForm() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     // Special handling for NIK - only allow numbers and max 16 digits
     if (name === 'nik') {
       const numericValue = value.replace(/\D/g, ''); // Remove non-digits
@@ -68,7 +70,7 @@ export default function AddEmployeeForm() {
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
-      // Clear error for this field
+    // Clear error for this field
     if (errors[name]) {
       setErrors((prev: Record<string, string[]>) => ({ ...prev, [name]: [] }));
     }
@@ -100,7 +102,7 @@ export default function AddEmployeeForm() {
 
     try {
       const formDataToSend = new FormData();
-      
+
       // Append all form fields
       Object.entries(formData).forEach(([key, value]) => {
         if (value && value.trim() !== '') {
@@ -115,7 +117,7 @@ export default function AddEmployeeForm() {
 
       // Get token from localStorage or wherever you store it
       const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
-      
+
       if (!token) {
         alert('You are not authenticated. Please login again.');
         router.push('/login');
@@ -152,225 +154,229 @@ export default function AddEmployeeForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-200 flex items-center justify-center px-4">
-      <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-6xl">
-        <h2 className="text-lg font-semibold mb-6">Add New Employee</h2>
-        
-        {/* Upload Foto */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-20 h-20 bg-slate-700 rounded overflow-hidden">
-            {avatarPreview ? (
-              <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full bg-slate-700" />
-            )}
-          </div>
-          <label className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm cursor-pointer">
-            + Upload Foto
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/jpg"
-              onChange={handleAvatarChange}
-              className="hidden"
-            />
-          </label>
-        </div>
+    <AuthWrapper requireAdmin={true}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-200 flex items-center justify-center px-4">
+          <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-6xl">
+            <h2 className="text-lg font-semibold mb-6">Add New Employee</h2>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
-          {/* Kolom Kiri */}
-          <div className="space-y-4">
-            <Field 
-              label="First Name" 
-              name="first_name" 
-              value={formData.first_name} 
-              onChange={handleChange} 
-              placeholder="Enter the First Name"
-              error={errors.first_name}
-              required
-            />
-            <Field 
-              label="Mobile Number" 
-              name="mobile_phone" 
-              value={formData.mobile_phone} 
-              onChange={handleChange} 
-              placeholder="Enter the Mobile Number"
-              error={errors.mobile_phone}
-              required
-            />
-            <SelectField 
-              label="Gender" 
-              name="gender" 
-              value={formData.gender} 
-              onChange={handleChange} 
-              options={options.genders} 
-              placeholder="-Choose Gender-"
-              error={errors.gender}
-              required
-            />
-            <Field 
-              label="Place of Birth" 
-              name="place_of_birth" 
-              value={formData.place_of_birth} 
-              onChange={handleChange} 
-              placeholder="Enter the Place of Birth"
-              error={errors.place_of_birth}
-              required
-            />
-            <Field 
-              label="Position" 
-              name="position" 
-              value={formData.position} 
-              onChange={handleChange} 
-              placeholder="Enter the Position"
-              error={errors.position}
-              required
-            />
-            <SelectField 
-              label="Contract Type" 
-              name="contract_type" 
-              value={formData.contract_type} 
-              onChange={handleChange} 
-              options={options.contractTypes} 
-              placeholder="-Choose Type-"
-              error={errors.contract_type}
-              required
-            />
-            <SelectField 
-              label="Bank" 
-              name="bank" 
-              value={formData.bank} 
-              onChange={handleChange} 
-              options={options.banks} 
-              placeholder="-Choose Bank-"
-              error={errors.bank}
-              required
-            />
-            <Field 
-              label="Account Holder's Name" 
-              name="acc_holder_name" 
-              value={formData.acc_holder_name} 
-              onChange={handleChange} 
-              placeholder="Bank Account Holder Name"
-              error={errors.acc_holder_name}
-              required
-            />
-          </div>
-
-          {/* Kolom Kanan */}
-          <div className="space-y-4">
-            <Field 
-              label="Last Name" 
-              name="last_name" 
-              value={formData.last_name} 
-              onChange={handleChange} 
-              placeholder="Enter the Last Name"
-              error={errors.last_name}
-              required
-            />
-            {/* NIK Field with special handling */}
-            <div>
-              <label className="block font-medium mb-1">
-                NIK <span className="text-red-500">*</span>
-              </label>
-              <input 
-                name="nik" 
-                value={formData.nik} 
-                onChange={handleChange} 
-                placeholder="Enter 16-digit NIK"
-                className={`w-full border px-3 py-2 rounded ${errors.nik ? 'border-red-500' : ''}`}
-                maxLength={16}
-                pattern="[0-9]{16}"
-                title="NIK must be exactly 16 digits"
-                required
-              />
-              <div className="text-sm text-gray-500 mt-1">
-                {formData.nik.length}/16 digits
+            {/* Upload Foto */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-20 h-20 bg-slate-700 rounded overflow-hidden">
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-slate-700" />
+                )}
               </div>
-              {errors.nik && <p className="text-red-500 text-sm mt-1">{Array.isArray(errors.nik) ? errors.nik[0] : errors.nik}</p>}
-            </div>
-            <SelectField 
-              label="Last Education" 
-              name="last_education" 
-              value={formData.last_education} 
-              onChange={handleChange} 
-              options={options.educations} 
-              placeholder="-Choose Education-"
-              error={errors.last_education}
-              required
-            />
-            <div>
-              <label className="block font-medium mb-1">
-                Date of Birth <span className="text-red-500">*</span>
+              <label className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm cursor-pointer">
+                + Upload Foto
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/jpg"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                />
               </label>
-              <input 
-                name="date_of_birth" 
-                type="date" 
-                value={formData.date_of_birth} 
-                onChange={handleChange} 
-                className={`w-full border px-3 py-2 rounded ${errors.date_of_birth ? 'border-red-500' : ''}`}
-                required
-              />
-              {errors.date_of_birth && <p className="text-red-500 text-sm mt-1">{Array.isArray(errors.date_of_birth) ? errors.date_of_birth[0] : errors.date_of_birth}</p>}
             </div>
-            <Field 
-              label="Branch" 
-              name="branch" 
-              value={formData.branch} 
-              onChange={handleChange} 
-              placeholder="Enter the Branch"
-              error={errors.branch}
-              required
-            />
-            <Field 
-              label="Grade" 
-              name="grade" 
-              value={formData.grade} 
-              onChange={handleChange} 
-              placeholder="Enter the Grade"
-              error={errors.grade}
-              required
-            />
-            <Field 
-              label="Account Number" 
-              name="account_number" 
-              value={formData.account_number} 
-              onChange={handleChange} 
-              placeholder="Enter the Account Number"
-              error={errors.account_number}
-              required
-            />
-            <Field 
-              label="Letter ID (Optional)" 
-              name="letter_id" 
-              value={formData.letter_id} 
-              onChange={handleChange} 
-              placeholder="Enter Letter ID"
-              error={errors.letter_id}
-            />
-          </div>
 
-          {/* Tombol */}
-          <div className="col-span-2 flex justify-end space-x-3 pt-2">
-            <Link href="/admin/employee/employee-database">
-              <button 
-                type="button" 
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-            </Link>
-            <button 
-              type="submit" 
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Saving...' : 'Save'}
-            </button>
+            <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
+              {/* Kolom Kiri */}
+              <div className="space-y-4">
+                <Field
+                  label="First Name"
+                  name="first_name"
+                  value={formData.first_name}
+                  onChange={handleChange}
+                  placeholder="Enter the First Name"
+                  error={errors.first_name}
+                  required
+                />
+                <Field
+                  label="Mobile Number"
+                  name="mobile_phone"
+                  value={formData.mobile_phone}
+                  onChange={handleChange}
+                  placeholder="Enter the Mobile Number"
+                  error={errors.mobile_phone}
+                  required
+                />
+                <SelectField
+                  label="Gender"
+                  name="gender"
+                  value={formData.gender}
+                  onChange={handleChange}
+                  options={options.genders}
+                  placeholder="-Choose Gender-"
+                  error={errors.gender}
+                  required
+                />
+                <Field
+                  label="Place of Birth"
+                  name="place_of_birth"
+                  value={formData.place_of_birth}
+                  onChange={handleChange}
+                  placeholder="Enter the Place of Birth"
+                  error={errors.place_of_birth}
+                  required
+                />
+                <Field
+                  label="Position"
+                  name="position"
+                  value={formData.position}
+                  onChange={handleChange}
+                  placeholder="Enter the Position"
+                  error={errors.position}
+                  required
+                />
+                <SelectField
+                  label="Contract Type"
+                  name="contract_type"
+                  value={formData.contract_type}
+                  onChange={handleChange}
+                  options={options.contractTypes}
+                  placeholder="-Choose Type-"
+                  error={errors.contract_type}
+                  required
+                />
+                <SelectField
+                  label="Bank"
+                  name="bank"
+                  value={formData.bank}
+                  onChange={handleChange}
+                  options={options.banks}
+                  placeholder="-Choose Bank-"
+                  error={errors.bank}
+                  required
+                />
+                <Field
+                  label="Account Holder's Name"
+                  name="acc_holder_name"
+                  value={formData.acc_holder_name}
+                  onChange={handleChange}
+                  placeholder="Bank Account Holder Name"
+                  error={errors.acc_holder_name}
+                  required
+                />
+              </div>
+
+              {/* Kolom Kanan */}
+              <div className="space-y-4">
+                <Field
+                  label="Last Name"
+                  name="last_name"
+                  value={formData.last_name}
+                  onChange={handleChange}
+                  placeholder="Enter the Last Name"
+                  error={errors.last_name}
+                  required
+                />
+                {/* NIK Field with special handling */}
+                <div>
+                  <label className="block font-medium mb-1">
+                    NIK <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="nik"
+                    value={formData.nik}
+                    onChange={handleChange}
+                    placeholder="Enter 16-digit NIK"
+                    className={`w-full border px-3 py-2 rounded ${errors.nik ? 'border-red-500' : ''}`}
+                    maxLength={16}
+                    pattern="[0-9]{16}"
+                    title="NIK must be exactly 16 digits"
+                    required
+                  />
+                  <div className="text-sm text-gray-500 mt-1">
+                    {formData.nik.length}/16 digits
+                  </div>
+                  {errors.nik && <p className="text-red-500 text-sm mt-1">{Array.isArray(errors.nik) ? errors.nik[0] : errors.nik}</p>}
+                </div>
+                <SelectField
+                  label="Last Education"
+                  name="last_education"
+                  value={formData.last_education}
+                  onChange={handleChange}
+                  options={options.educations}
+                  placeholder="-Choose Education-"
+                  error={errors.last_education}
+                  required
+                />
+                <div>
+                  <label className="block font-medium mb-1">
+                    Date of Birth <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="date_of_birth"
+                    type="date"
+                    value={formData.date_of_birth}
+                    onChange={handleChange}
+                    className={`w-full border px-3 py-2 rounded ${errors.date_of_birth ? 'border-red-500' : ''}`}
+                    required
+                  />
+                  {errors.date_of_birth && <p className="text-red-500 text-sm mt-1">{Array.isArray(errors.date_of_birth) ? errors.date_of_birth[0] : errors.date_of_birth}</p>}
+                </div>
+                <Field
+                  label="Branch"
+                  name="branch"
+                  value={formData.branch}
+                  onChange={handleChange}
+                  placeholder="Enter the Branch"
+                  error={errors.branch}
+                  required
+                />
+                <Field
+                  label="Grade"
+                  name="grade"
+                  value={formData.grade}
+                  onChange={handleChange}
+                  placeholder="Enter the Grade"
+                  error={errors.grade}
+                  required
+                />
+                <Field
+                  label="Account Number"
+                  name="account_number"
+                  value={formData.account_number}
+                  onChange={handleChange}
+                  placeholder="Enter the Account Number"
+                  error={errors.account_number}
+                  required
+                />
+                <Field
+                  label="Letter ID (Optional)"
+                  name="letter_id"
+                  value={formData.letter_id}
+                  onChange={handleChange}
+                  placeholder="Enter Letter ID"
+                  error={errors.letter_id}
+                />
+              </div>
+
+              {/* Tombol */}
+              <div className="col-span-2 flex justify-end space-x-3 pt-2">
+                <Link href="/admin/employee/employee-database">
+                  <button
+                    type="button"
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </button>
+                </Link>
+                <button
+                  type="submit"
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </form>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }
 
@@ -391,11 +397,11 @@ function Field({ label, name, value, onChange, placeholder, error, required }: F
       <label className="block font-medium mb-1">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      <input 
-        name={name} 
-        value={value} 
-        onChange={onChange} 
-        placeholder={placeholder} 
+      <input
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
         className={`w-full border px-3 py-2 rounded ${error ? 'border-red-500' : ''}`}
         required={required}
       />
@@ -422,10 +428,10 @@ function SelectField({ label, name, value, onChange, options, placeholder, error
       <label className="block font-medium mb-1">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      <select 
-        name={name} 
-        value={value} 
-        onChange={onChange} 
+      <select
+        name={name}
+        value={value}
+        onChange={onChange}
         className={`w-full border px-3 py-2 rounded ${error ? 'border-red-500' : ''}`}
         required={required}
       >
