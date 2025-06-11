@@ -102,7 +102,7 @@ export const PlansProvider = ({ children }: PlansProviderProps) => {
           id: apiMethod.id || localMethod?.id || `method-${Math.random()}`,
           name: apiMethod.name || localMethod?.name || 'Unknown Method',
           type: apiMethod.type || localMethod?.type || 'card',
-          logo: localMethod?.logo || null, // Use local logo path
+          logo: localMethod?.logo ?? undefined, // Use local logo path, ensure undefined not null
           processing_fee: Number(apiMethod.processing_fee) || localMethod?.processing_fee || 0
         };
       });
