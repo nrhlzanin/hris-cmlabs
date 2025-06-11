@@ -113,11 +113,11 @@ class AuthService {
       throw error;
     }
   }
-
   // Token Management
   getToken(): string | null {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('auth_token');
+      // Check both localStorage and sessionStorage for compatibility
+      return localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     }
     return null;
   }
@@ -125,6 +125,7 @@ class AuthService {
   setToken(token: string): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('auth_token', token);
+      sessionStorage.setItem('auth_token', token);
     }
   }
 
@@ -132,13 +133,16 @@ class AuthService {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_data');
+      localStorage.removeItem('session_data');
+      sessionStorage.removeItem('auth_token');
+      sessionStorage.removeItem('user_data');
+      sessionStorage.removeItem('session_data');
     }
   }
-
   // User Data Management
   getUserData(): User | null {
     if (typeof window !== 'undefined') {
-      const userData = localStorage.getItem('user_data');
+      const userData = localStorage.getItem('user_data') || sessionStorage.getItem('user_data');
       return userData ? JSON.parse(userData) : null;
     }
     return null;
@@ -147,6 +151,7 @@ class AuthService {
   setUserData(user: User): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('user_data', JSON.stringify(user));
+      sessionStorage.setItem('user_data', JSON.stringify(user));
     }
   }
 
@@ -236,7 +241,6 @@ class AuthService {
       body: JSON.stringify(data),
     });
   }
-
   async logout(): Promise<AuthResponse> {
     try {
       const response = await this.makeRequest('/logout', {
@@ -248,6 +252,26 @@ class AuthService {
       return response;
     } catch (error) {
       // Even if the API call fails, remove local tokens
+      this.removeToken();
+      throw error;
+    }
+  }
+
+  async refreshToken(): Promise<AuthResponse> {
+    try {
+      const response = await this.makeRequest('/refresh-token', {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+      });
+
+      if (response.success && response.data) {
+        this.setToken(response.data.token);
+        this.setUserData(response.data.user);
+      }
+
+      return response;
+    } catch (error) {
+      // If refresh fails, user needs to login again
       this.removeToken();
       throw error;
     }

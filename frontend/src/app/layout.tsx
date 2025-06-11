@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../styles/globals.css";
 import 'font-awesome/css/font-awesome.min.css';
+import { SessionProvider } from "@/providers/SessionProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,16 +27,17 @@ export default function RootLayout({
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
           rel="stylesheet"
         />
+        <link
+          href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css"
+          rel="stylesheet"
+        />
       </head>
       <body className={`${inter.variable} antialiased`}>
-        {children}
+        <SessionProvider>
+          {children}
+        </SessionProvider>
       </body>
     </html>
   );
 }
-
-<link
-  href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css"
-  rel="stylesheet"
-/>
 
