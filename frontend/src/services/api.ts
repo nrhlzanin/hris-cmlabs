@@ -1,16 +1,13 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-class ApiService {
-  private getAuthHeaders() {
-    const token = localStorage.getItem('auth_token');
+class ApiService {  private getAuthHeaders() {
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     return {
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-  }
-
-  private async handleResponse(response: Response) {
+  }  private async handleResponse(response: Response) {
     const contentType = response.headers.get('content-type');
     
     if (!contentType || !contentType.includes('application/json')) {

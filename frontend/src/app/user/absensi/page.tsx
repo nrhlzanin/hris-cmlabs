@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
+import { apiService } from '@/services/api';
 
 // Dynamic import untuk Leaflet (hanya di client side)
 const MapComponent = dynamic(() => import('./MapComponent'), {
@@ -175,7 +176,6 @@ export default function AbsensiForm() {
       handleFileUpload(e.target.files[0]);
     }
   };
-
   const handleFileUpload = (file: File) => {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
@@ -195,24 +195,7 @@ export default function AbsensiForm() {
       ...prev,
       supporting_evidence: file
     }));
-  };
-
-  const getApiEndpoint = (type: string) => {
-    switch (type) {
-      case 'clock_in':
-        return '/api/check-clock/clock-in';
-      case 'clock_out':
-        return '/api/check-clock/clock-out';
-      case 'break_start':
-        return '/api/check-clock/break-start';
-      case 'break_end':
-        return '/api/check-clock/break-end';
-      default:
-        return '/api/check-clock/clock-in'; // Default to clock-in
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  };const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError("");
     
@@ -226,18 +209,10 @@ export default function AbsensiForm() {
       return;
     }
 
-    setIsLoading(true);    try {
-      // Check if we have a token
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        setSubmitError('Authentication required. Please login first.');
-        setIsLoading(false);
-        return;
-      }
-
-      const endpoint = getApiEndpoint(formData.absent_type);
-      
-      // Prepare form data
+    setIsLoading(true);
+    
+    try {
+      // Prepare form data for API service
       const submitData = new FormData();
       submitData.append('latitude', formData.latitude.toString());
       submitData.append('longitude', formData.longitude.toString());
@@ -247,31 +222,31 @@ export default function AbsensiForm() {
         submitData.append('supporting_evidence', formData.supporting_evidence);
       }
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json',
-          // Don't set Content-Type for FormData
-        },
-        body: submitData,
-      });
-
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text);
-        throw new Error('Server error: Invalid response format');
+      let result;
+      
+      // Use the appropriate API service method based on the selected type
+      switch (formData.absent_type) {
+        case 'clock_in':
+          result = await apiService.checkClockIn(submitData);
+          break;
+        case 'clock_out':
+          result = await apiService.checkClockOut(submitData);
+          break;
+        case 'break_start':
+          result = await apiService.breakStart(submitData);
+          break;
+        case 'break_end':
+          result = await apiService.breakEnd(submitData);
+          break;
+        default:
+          throw new Error('Invalid absent type selected');
       }
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      if (result && result.success) {
         alert(result.message || 'Attendance recorded successfully!');
         router.push('/user/checklock');
       } else {
-        setSubmitError(result.message || 'Failed to record attendance');
+        setSubmitError(result?.message || 'Failed to record attendance');
       }
     } catch (error) {
       console.error('Error submitting attendance:', error);
