@@ -3,75 +3,65 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import SignUpForm from "@/app/components/auth/signupform";
+import SignUpForm from "@/app/components/auth/signup/signupform";
+import AuthLayout from "@/app/components/auth/signup/AuthLayout";
+import SocialButton from "@/app/components/auth/signup/SocialButton";
 
 export default function SignUpPage() {
-  const [isMounted, setIsMounted] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+  
+    useEffect(() => {
+      setIsMounted(true);
+    }, []);
+  
+    if (!isMounted) {
+      return null;
+    }
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) {
-    return null;
-  }
+    const pageHeader = (
+      <div className="flex justify-between items-center">
+        <Image src="/img/logo/Logo HRIS-1.png" alt="HRIS Logo" width={100} height={32} />
+        <Link href="/auth/sign-in" className="text-sm font-semibold text-blue-600 hover:underline">
+          Login here!
+        </Link>
+      </div>
+    );
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-screen overflow-auto bg-white font-inter">
-      <div className="w-full md:w-1/2 h-64 md:h-full relative">
-        <Link
-          href="/"
-          className="absolute top-4 left-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white px-4 py-2 rounded-full shadow-lg hover:from-blue-700 hover:to-blue-500 hover:scale-105 transition-all duration-300 flex items-center justify-center z-10"
+    <AuthLayout
+      imageUrl="/img/signup.jpg"
+      imageAlt="People collaborating in an office"
+      header={pageHeader} 
+    >
+      
+      <h1 className="text-2xl sm:text-3xl text-gray-800 font-bold mb-2">Create Account</h1>
+      <p className="mb-8 text-gray-600">
+        Streamline your employee management from day one.
+      </p>
+
+      <SignUpForm />
+
+      <div className="relative flex py-4 items-center">
+          <div className="flex-grow border-t border-gray-200"></div>
+          <span className="flex-shrink mx-4 text-gray-400 text-xs font-semibold">OR</span>
+          <div className="flex-grow border-t border-gray-200"></div>
+      </div>
+      
+      <div className="space-y-3">
+        <SocialButton
+          icon="https://www.svgrepo.com/show/475656/google-color.svg"
         >
-          <span className="text-xl">&#8592;</span>
+          Sign in with Google
+        </SocialButton>
+      </div>
+
+      <p className="text-center text-sm mt-8 text-gray-600">
+        Already have an account?{' '}
+        <Link href="/auth/sign-in" className="font-semibold text-blue-600 hover:underline">
+          Sign in
         </Link>
-        <Image
-          src="/img/Sign Up.png"
-          alt="HRIS Illustration"
-          fill
-          className="object-cover"
-        />
-      </div>
+      </p>
 
-      <div className="w-full md:w-1/2 p-6 md:p-10 flex items-start justify-center overflow-auto">
-        <div className="w-full max-w-md">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-2">
-              <Image
-                src="/img/logo/Logo HRIS-1.png"
-                alt="HRIS Logo"
-                width={100}
-                height={32}
-              />
-            </div>
-            <Link href="../auth/sign-in" className="text-blue-500 font-semibold hover:underline">
-              Login here!
-            </Link>
-          </div>
-
-          <h1 className="text-3xl text-gray-800 font-bold mb-2">Sign Up</h1>
-          <p className="mb-6 text-gray-800">
-            Create your account and streamline your employee management.
-          </p>
-
-          <SignUpForm />
-
-          <Link href="/auth/google">
-            <button
-              type="button"
-              className="w-full bg-gradient-to-r from-gray-800 to-gray-600 hover:from-blue-500 hover:to-blue-300 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-xl border-2 border-transparent hover:border-blue-500 transition-all duration-300 flex items-center justify-center gap-2 mt-4"
-            >
-              <Image
-                src="https://www.svgrepo.com/show/475656/google-color.svg"
-                alt="Google"
-                width={20}
-                height={20}
-              />
-              Sign in with Google
-            </button>
-          </Link>
-        </div>
-      </div>
-    </div>
+    </AuthLayout>
   );
 }

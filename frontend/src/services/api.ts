@@ -1,16 +1,13 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-class ApiService {
-  private getAuthHeaders() {
-    const token = localStorage.getItem('token');
+class ApiService {  private getAuthHeaders() {
+    const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     return {
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/json',
       'Content-Type': 'application/json',
     };
-  }
-
-  private async handleResponse(response: Response) {
+  }  private async handleResponse(response: Response) {
     const contentType = response.headers.get('content-type');
     
     if (!contentType || !contentType.includes('application/json')) {
@@ -27,7 +24,6 @@ class ApiService {
     
     return data;
   }
-
   async checkClockIn(data: FormData) {
     try {
       const response = await fetch(`${API_BASE_URL}/api/check-clock/clock-in`, {
@@ -118,6 +114,129 @@ class ApiService {
       return await this.handleResponse(response);
     } catch (error) {
       console.error('Get today status error:', error);
+      throw error;
+    }
+  }
+
+  // Letter API methods
+  async getLetters(params?: Record<string, string>) {
+    try {
+      const queryString = params ? new URLSearchParams(params).toString() : '';
+      const response = await fetch(`${API_BASE_URL}/api/letters?${queryString}`, {
+        headers: this.getAuthHeaders(),
+      });
+      return await this.handleResponse(response);
+    } catch (error) {
+      console.error('Get letters error:', error);
+      throw error;
+    }
+  }
+
+  async getLetter(id: number) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/letters/${id}`, {
+        headers: this.getAuthHeaders(),
+      });
+      return await this.handleResponse(response);
+    } catch (error) {
+      console.error('Get letter error:', error);
+      throw error;
+    }
+  }
+
+  async createLetter(data: FormData | Record<string, any>) {
+    try {
+      const isFormData = data instanceof FormData;
+      const response = await fetch(`${API_BASE_URL}/api/letters`, {
+        method: 'POST',
+        headers: isFormData ? {
+          'Authorization': this.getAuthHeaders().Authorization,
+          'Accept': 'application/json',
+        } : this.getAuthHeaders(),
+        body: isFormData ? data : JSON.stringify(data),
+      });
+      return await this.handleResponse(response);
+    } catch (error) {
+      console.error('Create letter error:', error);
+      throw error;
+    }
+  }
+
+  async updateLetter(id: number, data: Record<string, any>) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/letters/${id}`, {
+        method: 'PUT',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(data),
+      });
+      return await this.handleResponse(response);
+    } catch (error) {
+      console.error('Update letter error:', error);
+      throw error;
+    }
+  }
+
+  async deleteLetter(id: number) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/letters/${id}`, {
+        method: 'DELETE',
+        headers: this.getAuthHeaders(),
+      });
+      return await this.handleResponse(response);
+    } catch (error) {
+      console.error('Delete letter error:', error);
+      throw error;
+    }
+  }
+
+  async getLetterHistory(id: number) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/letters/${id}/history`, {
+        headers: this.getAuthHeaders(),
+      });
+      return await this.handleResponse(response);
+    } catch (error) {
+      console.error('Get letter history error:', error);
+      throw error;
+    }
+  }
+
+  async approveLetter(id: number, description?: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/letters/${id}/approve`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ description: description || 'Letter approved by admin' }),
+      });
+      return await this.handleResponse(response);
+    } catch (error) {
+      console.error('Approve letter error:', error);
+      throw error;
+    }
+  }
+
+  async declineLetter(id: number, description: string) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/letters/${id}/decline`, {
+        method: 'POST',
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ description }),
+      });
+      return await this.handleResponse(response);
+    } catch (error) {
+      console.error('Decline letter error:', error);
+      throw error;
+    }
+  }
+
+  async getLetterFormats() {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/available-letter-formats`, {
+        headers: this.getAuthHeaders(),
+      });
+      return await this.handleResponse(response);
+    } catch (error) {
+      console.error('Get letter formats error:', error);
       throw error;
     }
   }

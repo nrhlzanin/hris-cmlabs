@@ -279,14 +279,22 @@ class CheckClockController extends Controller
         $breakStart = CheckClock::byUser($user->id_users)
             ->today()
             ->byType('break_start')
-            ->whereDoesntHave('breakEnd')
             ->first();
 
         if ($breakStart) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You are already on break since ' . \App\Helpers\TimezoneHelper::formatJakartaTime($breakStart->check_clock_time, 'H:i:s') . ' WIB'
-            ], 400);
+            // Check if there's already a break_end for this break_start
+            $breakEnd = CheckClock::byUser($user->id_users)
+                ->today()
+                ->byType('break_end')
+                ->where('check_clock_time', '>', $breakStart->check_clock_time)
+                ->first();
+
+            if (!$breakEnd) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You are already on break since ' . \App\Helpers\TimezoneHelper::formatJakartaTime($breakStart->check_clock_time, 'H:i:s') . ' WIB'
+                ], 400);
+            }
         }
 
         // Create break start record

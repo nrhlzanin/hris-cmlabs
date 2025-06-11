@@ -116,13 +116,12 @@ class AuthService {
   // Token Management
   getToken(): string | null {
     if (typeof window !== 'undefined') {
-      // Check both localStorage and sessionStorage for compatibility
       return localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
     }
     return null;
   }
 
-  setToken(token: string): void {
+  setToken(token: string, remember: boolean = true): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('auth_token', token);
       sessionStorage.setItem('auth_token', token);
@@ -132,6 +131,7 @@ class AuthService {
   removeToken(): void {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
+      sessionStorage.removeItem('auth_token');
       localStorage.removeItem('user_data');
       localStorage.removeItem('session_data');
       sessionStorage.removeItem('auth_token');
@@ -148,7 +148,7 @@ class AuthService {
     return null;
   }
 
-  setUserData(user: User): void {
+  setUserData(user: User, remember: boolean = true): void {
     if (typeof window !== 'undefined') {
       localStorage.setItem('user_data', JSON.stringify(user));
       sessionStorage.setItem('user_data', JSON.stringify(user));
@@ -184,7 +184,6 @@ class AuthService {
 
     return response;
   }
-
   async login(data: LoginData): Promise<AuthResponse> {
     const response = await this.makeRequest('/login', {
       method: 'POST',
@@ -192,8 +191,9 @@ class AuthService {
     });
 
     if (response.success && response.data) {
-      this.setToken(response.data.token);
-      this.setUserData(response.data.user);
+      const remember = data.remember || false;
+      this.setToken(response.data.token, remember);
+      this.setUserData(response.data.user, remember);
     }
 
     return response;

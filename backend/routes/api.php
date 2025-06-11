@@ -74,23 +74,38 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/letters/employee/{employeeName}', [LetterController::class, 'getByEmployee']);
     Route::post('/letters/generate-for-employee', [LetterController::class, 'generateForEmployee']);
     Route::get('/available-letter-formats', [LetterController::class, 'getAvailableFormats']);
+    Route::get('/letters/{id}/history', [LetterController::class, 'getHistory']);
+    
+    // Admin only letter routes
+    Route::middleware('admin')->group(function () {
+        Route::post('/letters/{id}/approve', [LetterController::class, 'approve']);
+        Route::post('/letters/{id}/decline', [LetterController::class, 'decline']);
+    });
     
     // Overtime routes
     Route::prefix('overtime')->group(function () {
-        // User routes - can view own overtime and create requests
-        Route::get('/', [OvertimeController::class, 'index']);
-        Route::post('/', [OvertimeController::class, 'store']);
-        Route::get('/{overtime}', [OvertimeController::class, 'show']);
-        Route::put('/{overtime}', [OvertimeController::class, 'update']);
-        Route::delete('/{overtime}', [OvertimeController::class, 'destroy']);
-        Route::post('/{overtime}/complete', [OvertimeController::class, 'complete']);
+        // Specific routes first (before parameterized routes)
         Route::get('/timezone-info', [OvertimeController::class, 'timezoneInfo']);
         
         // Admin only routes
         Route::middleware('admin')->group(function () {
+            Route::get('/admin/statistics', [OvertimeController::class, 'statistics']);
+        });
+        
+        // User routes - can view own overtime and create requests
+        Route::get('/', [OvertimeController::class, 'index']);
+        Route::post('/', [OvertimeController::class, 'store']);
+        
+        // Parameterized routes last
+        Route::get('/{overtime}', [OvertimeController::class, 'show']);
+        Route::put('/{overtime}', [OvertimeController::class, 'update']);
+        Route::delete('/{overtime}', [OvertimeController::class, 'destroy']);
+        Route::post('/{overtime}/complete', [OvertimeController::class, 'complete']);
+        
+        // Admin only parameterized routes
+        Route::middleware('admin')->group(function () {
             Route::post('/{overtime}/approve', [OvertimeController::class, 'approve']);
             Route::post('/{overtime}/reject', [OvertimeController::class, 'reject']);
-            Route::get('/admin/statistics', [OvertimeController::class, 'statistics']);
         });
     });
 });

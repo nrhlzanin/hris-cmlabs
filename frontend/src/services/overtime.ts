@@ -2,10 +2,16 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
+// Direct database access - no throttling for fast loading
 // API utility function for overtime service
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const token = localStorage.getItem('token');
+  // Direct API call without any delays
+  const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
   const url = `${API_BASE_URL}/api${endpoint}`;
+  
+  if (!token) {
+    throw new Error('No authentication token found. Please log in again.');
+  }
   
   const config: RequestInit = {
     headers: {
@@ -247,12 +253,11 @@ class OvertimeService {  /**
 
   /**
    * Download supporting document
-   */
-  async downloadSupportingDocument(id: number): Promise<Blob> {
+   */  async downloadSupportingDocument(id: number): Promise<Blob> {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/overtime/${id}/document`, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
       },
     });
 
@@ -297,11 +302,10 @@ class OvertimeService {  /**
     queryParams.append('format', format);
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/overtime/export?${queryParams.toString()}`,
-      {
+      `${process.env.NEXT_PUBLIC_API_URL}/overtime/export?${queryParams.toString()}`,      {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
         },
       }
     );

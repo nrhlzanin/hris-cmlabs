@@ -18,6 +18,11 @@ class Letter extends Model
         'name_letter_id',
         'employee_name',
         'name',
+        'letter_type',
+        'status',
+        'valid_until',
+        'description',
+        'supporting_document',
     ];
 
     /**
@@ -29,6 +34,7 @@ class Letter extends Model
     {
         return [
             'name_letter_id' => 'integer',
+            'valid_until' => 'date',
         ];
     }
 
@@ -38,6 +44,14 @@ class Letter extends Model
     public function letterFormat()
     {
         return $this->belongsTo(LetterFormat::class, 'name_letter_id', 'id_letter');
+    }
+
+    /**
+     * Get the letter histories.
+     */
+    public function histories()
+    {
+        return $this->hasMany(LetterHistory::class)->orderBy('created_at', 'desc');
     }
 
     /**
@@ -65,6 +79,22 @@ class Letter extends Model
     }
 
     /**
+     * Scope to filter by status.
+     */
+    public function scopeByStatus($query, string $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    /**
+     * Scope to filter by letter type.
+     */
+    public function scopeByLetterType($query, string $letterType)
+    {
+        return $query->where('letter_type', $letterType);
+    }
+
+    /**
      * Get the formatted creation date.
      */
     public function getFormattedCreatedAtAttribute(): string
@@ -78,5 +108,53 @@ class Letter extends Model
     public function getLetterFormatNameAttribute(): ?string
     {
         return $this->letterFormat?->name_letter;
+    }
+
+    /**
+     * Get the supporting document URL.
+     */
+    public function getSupportingDocumentUrlAttribute(): ?string
+    {
+        return $this->supporting_document ? asset('storage/' . $this->supporting_document) : null;
+    }
+
+    /**
+     * Get formatted valid until date in Jakarta timezone.
+     */
+    public function getFormattedValidUntilAttribute(): ?string
+    {
+        return $this->valid_until ? $this->valid_until->format('d M Y') . ' WIB' : null;
+    }
+
+    /**
+     * Check if letter is pending.
+     */
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    /**
+     * Check if letter is approved.
+     */
+    public function isApproved(): bool
+    {
+        return $this->status === 'approved';
+    }
+
+    /**
+     * Check if letter is declined.
+     */
+    public function isDeclined(): bool
+    {
+        return $this->status === 'declined';
+    }
+
+    /**
+     * Check if letter is waiting for review.
+     */
+    public function isWaitingReview(): bool
+    {
+        return $this->status === 'waiting_reviewed';
     }
 }

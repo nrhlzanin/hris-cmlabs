@@ -12,6 +12,8 @@ import { FileText, Clock, Upload, CheckCircle, XCircle, Calendar, AlertCircle } 
 import { useToast } from '@/hooks/use-toast';
 import { overtimeService, type OvertimeRecord } from '@/services/overtime';
 import { formatJakartaDate, formatJakartaTime, getJakartaTimeString } from '@/lib/timezone';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
 
 export default function UserOvertimePage() {
   const [overtimeRecords, setOvertimeRecords] = useState<OvertimeRecord[]>([]);
@@ -22,28 +24,37 @@ export default function UserOvertimePage() {
     end_time: '',
     tasks_completed: '',
     supporting_document: null as File | null
-  });
-  const [submitting, setSubmitting] = useState(false);  const { toast } = useToast();
-
-  const loadOvertimeRecords = useCallback(async () => {
+  });  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();  // Simple direct function without useCallback complexities
+  const loadOvertimeRecords = async () => {
     try {
       setLoading(true);
+      setError(null);
+      
+      // Direct database fetch
       const response = await overtimeService.getOvertimeRecords({
-        status: undefined,
-        per_page: 50
-      });      setOvertimeRecords(response.data);    } catch {
+        per_page: 100,
+        sort_by: 'overtime_date',
+        sort_order: 'desc'
+      });
+      
+      setOvertimeRecords(response.data);
+    } catch (err: any) {
+      console.error('Failed to load overtime records:', err);
+      const errorMessage = err.message || 'Failed to load overtime records';
+      setError(errorMessage);
       toast({
         title: 'Error',
-        description: 'Failed to load overtime records',
+        description: errorMessage
       });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
-
+  };
   useEffect(() => {
     loadOvertimeRecords();
-  }, [loadOvertimeRecords]);
+  }, []); // No dependencies, just load once
   const handleCompleteOvertime = (overtime: OvertimeRecord) => {
     setSelectedOvertime(overtime);
     setCompletionData({
@@ -118,23 +129,32 @@ export default function UserOvertimePage() {
 
   const isIncomplete = (overtime: OvertimeRecord) => {
     return !overtime.end_time;
-  };
-
-  if (loading) {
+  };  if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Clock className="h-8 w-8 animate-spin mx-auto mb-4" />
-            <p>Loading overtime records...</p>
+      <AuthWrapper requireAdmin={false}>
+        <DashboardLayout>
+          <div className="container mx-auto p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-3xl font-bold">My Overtime</h1>
+            </div>
+            
+            {/* Ultra simple loading - direct from database */}
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center">
+                <div className="h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">Loading dari database...</p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </DashboardLayout>
+      </AuthWrapper>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <AuthWrapper requireAdmin={false}>
+      <DashboardLayout>
+        <div className="container mx-auto p-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">My Overtime</h1>
         <Badge variant="outline" className="text-sm">
@@ -142,7 +162,19 @@ export default function UserOvertimePage() {
         </Badge>
       </div>
       
-      {overtimeRecords.length === 0 ? (
+      {error && !loading ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <h3 className="text-lg font-medium mb-2">Failed to load overtime records</h3>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={loadOvertimeRecords} variant="outline">
+              <Clock className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      ) : overtimeRecords.length === 0 && !loading ? (
         <Card>
           <CardContent className="text-center py-12">
             <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -319,9 +351,10 @@ export default function UserOvertimePage() {
                 Cancel
               </Button>
             </div>
-          </div>
-        </DialogContent>
+          </div>        </DialogContent>
       </Dialog>
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }

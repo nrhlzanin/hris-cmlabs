@@ -2,6 +2,8 @@
 
 import { CheckCircle, Clock, FileText, Calendar, MapPin, Coffee, Star, TrendingUp } from "lucide-react";
 import { useJakartaTime, useWorkingHours } from '@/hooks/use-timezone';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
 
 export default function UserDashboardPage() {
   const { formattedDate } = useJakartaTime();
@@ -13,9 +15,10 @@ export default function UserDashboardPage() {
     if (hour < 17) return 'Good afternoon';
     return 'Good evening';
   };
-
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <AuthWrapper requireAdmin={false}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl p-6 mb-6">
@@ -253,9 +256,10 @@ export default function UserDashboardPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </div>        </div>
       </div>
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }
