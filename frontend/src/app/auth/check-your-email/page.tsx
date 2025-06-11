@@ -1,97 +1,115 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useEffect, useState, MouseEvent } from "react";
 import Link from "next/link";
-import { FaArrowLeft } from "react-icons/fa";
+import { useRouter, useSearchParams } from "next/navigation";
+import AuthLayout from "@/app/components/auth/AuthLayout";
+import { FaArrowLeft, FaEnvelope } from "react-icons/fa";
+
 
 export default function CheckYourEmailPage() {
+  const [isMounted, setIsMounted] = useState(false);
   const [email, setEmail] = useState("");
+  const [isResending, setIsResending] = useState(false);
+  const [resendStatus, setResendStatus] = useState<{message: string; type: 'success' | 'error' } | null>(null);
+
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    const emailFromUrl = new URLSearchParams(window.location.search).get("email");
+    setIsMounted(true);
+    const emailFromUrl = searchParams.get("email");
     if (emailFromUrl) {
       setEmail(emailFromUrl);
     }
-  }, []);
+  }, [searchParams]);
+
+  const handleResendEmail = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (!email) return;
+
+    setIsResending(true);
+    setResendStatus(null);
+    
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+        const result = await response.json();
+        if (response.ok && result.success) {
+            setResendStatus({ message: result.message || 'Link has been resent!', type: 'success' });
+        } else {
+            setResendStatus({ message: result.message || 'Failed to resend link.', type: 'error' });
+        }
+    } catch (error) {
+        setResendStatus({ message: 'Connection error. Please try again.', type: 'error' });
+    } finally {
+        setIsResending(false);
+    }
+  };
+
+  if (!isMounted) {
+    return null;
+  }
 
   return (
-    <div className="flex flex-col md:flex-row-reverse h-screen w-screen overflow-hidden font-inter">
-      {/* Right Image Section */}
-      <div className="w-full md:w-1/2 h-64 md:h-full relative">
-        <Image
-          src="/img/Check Email.png"
-          alt="HRIS Illustration"
-          fill
-          className="object-cover"
-        />
+    <AuthLayout
+      imageUrl="/img/auth.jpg"
+      imageAlt="Illustration of a person checking email"
+      imagePosition="right"
+    >
+      <div className="text-center flex flex-col items-center">
+        <div className="w-20 h-20 bg-gray-100 rounded-full mb-6">
+          <FaEnvelope className="w-20 h-20 text-gray-500 mb-6" />
+        </div>
+        <h1 className="text-3xl sm:text-4xl text-gray-900 font-bold mb-3">Check your email</h1>
+        <p className="text-gray-600 max-w-sm mx-auto">
+          We sent a password reset link to your email <strong className="text-gray-800">{email}</strong> which valid for 24 hours after receives the email, Please check your inbox!
+        </p>
       </div>
 
-      {/* Left Info Section */}
-      <div className="w-full md:w-1/2 h-full overflow-y-auto p-6 md:p-10 flex flex-col justify-center bg-white">
-        {/* Icon */}
-        <div className="flex justify-center mb-6">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="64"
-            height="48"
-            viewBox="0 0 256 193"
-            className="h-16 w-auto"
-          >
-            <path
-              fill="#4285f4"
-              d="M58.182 192.05V93.14L27.507 65.077L0 49.504v125.091c0 9.658 7.825 17.455 17.455 17.455z"
-            />
-            <path
-              fill="#34a853"
-              d="M197.818 192.05h40.727c9.659 0 17.455-7.826 17.455-17.455V49.505l-31.156 17.837l-27.026 25.798z"
-            />
-            <path
-              fill="#ea4335"
-              d="m58.182 93.14l-4.174-38.647l4.174-36.989L128 69.868l69.818-52.364l4.669 34.992l-4.669 40.644L128 145.504z"
-            />
-            <path
-              fill="#fbbc04"
-              d="M197.818 17.504V93.14L256 49.504V26.231c0-21.585-24.64-33.89-41.89-20.945z"
-            />
-            <path
-              fill="#c5221f"
-              d="m0 49.504l26.759 20.07L58.182 93.14V17.504L41.89 5.286C24.61-7.66 0 4.646 0 26.23z"
-            />
-          </svg>
-        </div>
+      <div className="mt-8 space-y-4">
+        <a
+          href="https://mail.google.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full block bg-yellow-500 text-black font-bold py-2.5 rounded-lg shadow-md hover:shadow-lg hover:bg-yellow-400 transition-all duration-300 text-center"
+        >
+          Open Gmail
+        </a>
+        
+        {resendStatus && (
+            <div className={`p-3 rounded-lg text-sm text-left ${resendStatus.type === 'success' ? 'bg-green-50 border border-green-300 text-green-800' : 'bg-red-50 border border-red-300 text-red-800'}`}>
+                {resendStatus.message}
+            </div>
+        )}
 
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-semibold text-gray-900 mb-4">
-            Check your email
-          </h1>
-          <p className="text-gray-700 sm:text-lg max-w-md mx-auto mb-6">
-            We sent a password reset link to your email (
-            <strong>{email || "your-email@example.com"}</strong>) which is valid
-            for 24 hours. Please check your inbox!
-          </p>
-        </div>
-
-        {/* Button to Open Gmail */}
-        <Link href="../auth/set-new-password">
+      </div>
+      
+      <div className="text-center text-sm mt-8 space-y-4">
+        <p className="text-gray-600">
+          Don't receive the email?{' '}
           <button
-            type="button"
-            className="w-full bg-yellow-500 text-white font-bold py-2 rounded-lg shadow-md hover:shadow-lg hover:bg-yellow-400 transition-all duration-300"
+            onClick={handleResendEmail}
+            disabled={isResending}
+            className="font-semibold text-blue-600 hover:underline disabled:opacity-50 disabled:cursor-wait"
           >
-            Open Gmail
+            {isResending ? 'Resending...' : 'Click here to resend!'}
           </button>
-        </Link>
+        </p>
 
-        <p className="text-center text-sm mt-4">
+        <p>
           <Link
-            href="../auth/sign-in"
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 font-semibold hover:underline transition-all duration-300"
+            href="/auth/sign-in"
+            className="inline-flex items-center text-gray-600 hover:text-black font-semibold hover:underline transition-colors duration-300"
+            title="Back to login page" 
           >
-            <FaArrowLeft className="mr-2" />
+            <FaArrowLeft className="mr-2" aria-hidden="true" /> 
             Back to log in
           </Link>
         </p>
       </div>
-    </div>
+    </AuthLayout>
   );
 }

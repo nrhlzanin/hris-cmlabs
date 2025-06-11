@@ -142,7 +142,7 @@ body {
 input[type="password"]::-webkit-password-reveal-button,
 input[type="password"]::-ms-reveal {
   display: none;
-  appearance: none;
-  -webkit-appearance: none;
   -moz-appearance: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
