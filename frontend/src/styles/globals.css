@@ -138,3 +138,11 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+input[type="password"]::-webkit-password-reveal-button,
+input[type="password"]::-ms-reveal {
+  display: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}

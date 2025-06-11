@@ -46,7 +46,7 @@ export default function AddEmployeeForm() {
   const [avatar, setAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
 
   // Options sesuai dengan database enum
   const options = {
@@ -68,10 +68,9 @@ export default function AddEmployeeForm() {
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
-    
-    // Clear error for this field
+      // Clear error for this field
     if (errors[name]) {
-      setErrors((prev: any) => ({ ...prev, [name]: '' }));
+      setErrors((prev: Record<string, string[]>) => ({ ...prev, [name]: [] }));
     }
   };
 

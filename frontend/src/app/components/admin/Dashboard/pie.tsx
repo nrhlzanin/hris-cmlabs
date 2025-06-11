@@ -1,60 +1,86 @@
-import React from "react";
-import { PieChart, Pie, Cell, Legend, ResponsiveContainer } from "recharts";
+'use client';
+
+import React from 'react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 const data = [
-  { name: "Present", value: 60 },
-  { name: "Pemit", value: 20 },
-  { name: "Leave", value: 10 },
-  { name: "Sick", value: 10 },
+  { name: 'Ontime', value: 142 },
+  { name: 'Late', value: 34 },
+  { name: 'Absent', value: 9 },
 ];
 
-const COLORS = ["#1E7D3F", "#3BA3F2", "#A6231D", "#F5A700"];
+const COLORS = ['#16A34A', '#3B82F6', '#EF4444'];
 
-export default function AttendanceSummary() {
+const RADIAN = Math.PI / 180;
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
   return (
-    <div className="w-full max-w-md mx-auto p-4 bg-white shadow rounded-2xl">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Attendance Summary</h2>
-        <select className="border p-1 rounded text-sm">
-          <option>months</option>
-        </select>
-      </div>
-      <div className="w-full h-64">
+    <text x={x} y={y} fill="white" fontSize={12} textAnchor="middle" dominantBaseline="central">
+      {(percent * 100).toFixed(0)}%
+    </text>
+  );
+};
+
+export default function AttendancePieChart() {
+  return (
+    <div className="flex rounded-xl border p-6 bg-white shadow-md">
+      <div className="w-full md:w-1/2 h-64">
         <ResponsiveContainer>
           <PieChart>
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius={60}
-              outerRadius={80}
-              fill="#8884d8"
-              paddingAngle={2}
+              labelLine={false}
+              label={renderCustomizedLabel}
+              outerRadius={90}
               dataKey="value"
             >
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
+            <Tooltip contentStyle={{ fontSize: '12px' }} />
           </PieChart>
         </ResponsiveContainer>
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="text-center">
-            <p className="text-xl font-semibold">Total</p>
-            <p className="text-xl font-semibold">Presensi</p>
+      </div>
+      <div className="w-full md:w-1/2 flex flex-col justify-center px-6">
+        <div className="text-sm text-gray-700 font-semibold mb-2">
+          Attendance Statistics <span className="float-right font-normal text-gray-500">Today</span>
+        </div>
+        <div className="space-y-3 mt-4 text-sm">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-[#16A34A] mr-2"></div>
+              <span className="text-gray-700">Ontime</span>
+            </div>
+            <span className="font-medium text-gray-900">142</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-[#3B82F6] mr-2"></div>
+              <span className="text-gray-700">Late</span>
+            </div>
+            <span className="font-medium text-gray-900">34</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-[#EF4444] mr-2"></div>
+              <span className="text-gray-700">Absent</span>
+            </div>
+            <span className="font-medium text-gray-900">9</span>
           </div>
         </div>
-      </div>
-      <div className="flex justify-around mt-6">
-        {data.map((item, index) => (
-          <div key={item.name} className="flex items-center space-x-2">
-            <div
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: COLORS[index] }}
-            ></div>
-            <span className="text-sm">{item.name}</span>
-          </div>
-        ))}
+        <div className="text-xs text-gray-400 mt-6">Updated June 11, 2025</div>
       </div>
     </div>
   );

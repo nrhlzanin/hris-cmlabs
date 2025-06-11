@@ -1,7 +1,6 @@
 // app/page.tsx
 "use client";
 
-import Image from "next/image";
 import Link from 'next/link';
 import { useEffect } from "react";
 
@@ -389,9 +388,8 @@ export default function Home() {
 
       {/* Call to Action */}
       <section id="blog" className="bg-blue-300">
-        <div className="container mx-auto px-8 py-20 text-center">
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-800 mb-6">
-            Don't miss a thing!
+        <div className="container mx-auto px-8 py-20 text-center">          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-800 mb-6">
+            Don&apos;t miss a thing!
           </h2>
           <p className="text-gray-800 mb-8 text-sm sm:text-base md:text-lg">
             Stay in the loop for smarter HR solutions, feature updates, and special

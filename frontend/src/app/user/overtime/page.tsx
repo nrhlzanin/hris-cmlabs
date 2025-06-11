@@ -1,154 +1,360 @@
-﻿"use client";
+﻿'use client';
 
-import { useState } from "react";
-import Link from "next/link";
+import { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { FileText, Clock, Upload, CheckCircle, XCircle, Calendar, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { overtimeService, type OvertimeRecord } from '@/services/overtime';
+import { formatJakartaDate, formatJakartaTime, getJakartaTimeString } from '@/lib/timezone';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
 
-export default function OvertimeOverview() {
-  const [search, setSearch] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+export default function UserOvertimePage() {
+  const [overtimeRecords, setOvertimeRecords] = useState<OvertimeRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [selectedOvertime, setSelectedOvertime] = useState<OvertimeRecord | null>(null);
+  const [completionData, setCompletionData] = useState({
+    end_time: '',
+    tasks_completed: '',
+    supporting_document: null as File | null
+  });  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();  // Simple direct function without useCallback complexities
+  const loadOvertimeRecords = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Direct database fetch
+      const response = await overtimeService.getOvertimeRecords({
+        per_page: 100,
+        sort_by: 'overtime_date',
+        sort_order: 'desc'
+      });
+      
+      setOvertimeRecords(response.data);
+    } catch (err: any) {
+      console.error('Failed to load overtime records:', err);
+      const errorMessage = err.message || 'Failed to load overtime records';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    loadOvertimeRecords();
+  }, []); // No dependencies, just load once
+  const handleCompleteOvertime = (overtime: OvertimeRecord) => {
+    setSelectedOvertime(overtime);
+    setCompletionData({
+      end_time: getJakartaTimeString(), // Set current Jakarta time as default
+      tasks_completed: '',
+      supporting_document: null
+    });
+    setCompletionDialogOpen(true);
+  };
 
-  const data = [
-    {
-      date: "August, 15 2025",
-      reason: "Pak, kasih saya makan pak..",
-      timeSend: "17:45:00",
-      status: "Waiting Payment",
-    },
-    {
-      date: "August, 10 2025",
-      reason: "Reason",
-      timeSend: "Time Send",
-      status: "Approved",
-    },
-  ];
+  const handleSubmitCompletion = async () => {
+    if (!selectedOvertime || !completionData.end_time) {      toast({
+        title: 'Error',
+        description: 'End time is required',
+      });
+      return;
+    }
 
-  return (
-    <div className="min-h-screen bg-gray-100 py-10 px-4">
-      <div className="max-w-7xl mx-auto bg-white p-6 rounded-lg shadow">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-semibold">Overtime Overview</h2>
-          <div className="flex space-x-2">
-            <input
-              type="text"
-              placeholder="Search Employee"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="px-3 py-2 border rounded-md focus:ring focus:border-blue-300"
-            />
-            <button className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Filter</button>
-            <Link href="checklock/">
-              <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center">
-                <span className="text-lg mr-1">+</span> Add Data
-              </button>
-            </Link>
-          </div>
-        </div>
+    try {
+      setSubmitting(true);
+      await overtimeService.completeOvertime(selectedOvertime.id, {
+        end_time: completionData.end_time,
+        tasks_completed: completionData.tasks_completed,
+        supporting_document: completionData.supporting_document || undefined
+      });
 
-        <div className="overflow-x-auto border rounded-lg">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-3">Date</th>
-                <th className="p-3">Reason</th>
-                <th className="p-3">Time Send</th>
-                <th className="p-3">Status</th>
-                <th className="p-3 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {data.map((row, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="p-3">{row.date}</td>
-                  <td className="p-3">{row.reason}</td>
-                  <td className="p-3">{row.timeSend}</td>
-                  <td className="p-3">
-                    {row.status === "Approved" ? (
-                      <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs">
-                        Approved
-                      </span>
-                    ) : (
-                      <span className="bg-yellow-400 text-white px-2 py-1 rounded-full text-xs">
-                        Waiting Payment
-                      </span>
-                    )}
-                  </td>
-                  <td className="p-3 text-center">
-                    <button
-                      onClick={() => setIsModalOpen(true)}
-                      className="px-3 py-1 bg-gray-200 rounded-md hover:bg-gray-300 text-sm border border-gray-400"
-                    >
-                      ...
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      toast({
+        title: 'Success',
+        description: 'Overtime completed successfully',
+      });      setCompletionDialogOpen(false);
+      loadOvertimeRecords();    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to complete overtime',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-        <div className="mt-6 flex justify-between items-center text-sm text-gray-500">
-          <div className="flex items-center space-x-1">
-            <span>Showing</span>
-            <select className="border rounded px-2 py-1 text-sm">
-              <option>10</option>
-            </select>
-            <span>out of 60 records</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <button className="px-2 py-1 border rounded">1</button>
-            <button className="px-2 py-1 border rounded bg-blue-500 text-white">2</button>
-            <button className="px-2 py-1 border rounded">3</button>
-          </div>
-        </div>
-      </div>
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'rejected':
+        return <XCircle className="h-5 w-5 text-red-500" />;
+      case 'pending':
+        return <Clock className="h-5 w-5 text-yellow-500" />;
+      default:
+        return <AlertCircle className="h-5 w-5 text-blue-500" />;
+    }
+  };
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative">
-            <h2 className="text-lg font-bold mb-2">Overtime Form</h2>
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return 'default' as const;
+      case 'rejected':
+        return 'destructive' as const;
+      case 'pending':
+        return 'secondary' as const;
+      default:
+        return 'outline' as const;
+    }
+  };
+  const formatTime = (timeString: string | null) => {
+    if (!timeString) return 'Not set';
+    // Create a date object with the time in Jakarta timezone
+    const date = new Date(`1970-01-01T${timeString}`);
+    return formatJakartaTime(date);
+  };
 
-            <div className="mb-2">
-              <p className="font-semibold">Date</p>
-              <p>August, 15 2025</p>
+  const isIncomplete = (overtime: OvertimeRecord) => {
+    return !overtime.end_time;
+  };  if (loading) {
+    return (
+      <AuthWrapper requireAdmin={false}>
+        <DashboardLayout>
+          <div className="container mx-auto p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-3xl font-bold">My Overtime</h1>
             </div>
-
-            <div className="mb-4">
-              <p className="font-semibold mb-1">Upload Supporting Evidence</p>
-              <div className="border border-dashed border-gray-400 p-6 text-center">
-                <p>📷</p>
-                <p>Drag and Drop Here</p>
-                <p className="font-bold">Or Browse</p>
+            
+            {/* Ultra simple loading - direct from database */}
+            <div className="flex items-center justify-center h-32">
+              <div className="text-center">
+                <div className="h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <p className="text-sm text-gray-600">Loading dari database...</p>
               </div>
             </div>
-
-            <div className="mb-4">
-              <p className="font-semibold mb-1">Time Sending</p>
-              <p>{new Date().toLocaleTimeString()}</p>
-            </div>
-
-            <div className="mb-4">
-              <p className="font-semibold mb-1">Finish or Not?</p>
-              <select className="w-full border rounded px-3 py-2">
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Submit
-              </button>
-            </div>
           </div>
+        </DashboardLayout>
+      </AuthWrapper>
+    );
+  }
+
+  return (
+    <AuthWrapper requireAdmin={false}>
+      <DashboardLayout>
+        <div className="container mx-auto p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">My Overtime</h1>
+        <Badge variant="outline" className="text-sm">
+          {overtimeRecords.length} records
+        </Badge>
+      </div>
+      
+      {error && !loading ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+            <h3 className="text-lg font-medium mb-2">Failed to load overtime records</h3>
+            <p className="text-muted-foreground mb-4">{error}</p>
+            <Button onClick={loadOvertimeRecords} variant="outline">
+              <Clock className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      ) : overtimeRecords.length === 0 && !loading ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium mb-2">No overtime records found</h3>
+            <p className="text-muted-foreground">
+              Your overtime requests will appear here once submitted.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {overtimeRecords.map((record) => (
+            <Card key={record.id} className={isIncomplete(record) ? 'border-yellow-200 bg-yellow-50' : ''}>
+              <CardHeader>                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-5 w-5" />
+                    <span>{formatJakartaDate(new Date(record.date), { 
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })} WIB</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(record.status)}
+                    <Badge variant={getStatusVariant(record.status)}>
+                      {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                    </Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Start Time</p>
+                    <p className="font-medium">{formatTime(record.start_time)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">End Time</p>
+                    <p className="font-medium">
+                      {record.end_time ? formatTime(record.end_time) : (
+                        <span className="text-yellow-600">Pending completion</span>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Duration</p>
+                    <p className="font-medium">
+                      {record.duration_hours ? `${record.duration_hours} hours` : (
+                        <span className="text-yellow-600">Pending</span>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Type</p>
+                    <p className="font-medium capitalize">{record.overtime_type}</p>
+                  </div>
+                </div>
+                
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Reason</p>
+                  <p className="text-sm">{record.reason}</p>
+                </div>
+
+                {record.tasks_completed && (
+                  <div className="mb-4">
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Tasks Completed</p>
+                    <p className="text-sm">{record.tasks_completed}</p>
+                  </div>
+                )}
+
+                {record.supporting_document_url && (
+                  <div className="mb-4">
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={record.supporting_document_url} target="_blank" rel="noopener noreferrer">
+                        <FileText className="h-4 w-4 mr-2" />
+                        View Document
+                      </a>
+                    </Button>
+                  </div>
+                )}
+                
+                {isIncomplete(record) && record.status !== 'rejected' && (
+                  <div className="border-t pt-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-600">
+                        Complete your overtime by uploading evidence
+                      </span>
+                    </div>
+                    <Button 
+                      onClick={() => handleCompleteOvertime(record)} 
+                      className="w-full sm:w-auto"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Complete Overtime
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
+
+      {/* Completion Dialog */}
+      <Dialog open={completionDialogOpen} onOpenChange={setCompletionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Complete Overtime</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="end_time">End Time *</Label>
+              <Input
+                id="end_time"
+                type="time"
+                value={completionData.end_time}
+                onChange={(e) => setCompletionData(prev => ({ ...prev, end_time: e.target.value }))}
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="supporting_document">Supporting Document</Label>
+              <Input
+                id="supporting_document"
+                type="file"
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => setCompletionData(prev => ({ 
+                  ...prev, 
+                  supporting_document: e.target.files?.[0] || null 
+                }))}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Upload evidence of your overtime work (PDF, JPG, PNG)
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="tasks_completed">Tasks Completed (Optional)</Label>
+              <Textarea
+                id="tasks_completed"
+                value={completionData.tasks_completed}
+                onChange={(e) => setCompletionData(prev => ({ ...prev, tasks_completed: e.target.value }))}
+                placeholder="Describe what tasks were completed during overtime..."
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={handleSubmitCompletion} 
+                disabled={submitting || !completionData.end_time}
+                className="flex-1"
+              >
+                {submitting ? (
+                  <>
+                    <Clock className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Complete
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setCompletionDialogOpen(false)}
+                disabled={submitting}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>        </DialogContent>
+      </Dialog>
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }

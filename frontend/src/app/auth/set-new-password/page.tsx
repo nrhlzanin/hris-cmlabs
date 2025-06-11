@@ -38,9 +38,7 @@ export default function SetNewPasswordPage() {
   }, [token, email]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    let newErrors = {
+    e.preventDefault();      const newErrors = {
       password: "",
       confirmPassword: "",
       general: "",

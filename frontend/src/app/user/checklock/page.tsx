@@ -1,16 +1,20 @@
-﻿'use client';
+// app/checklock/overview/page.tsx (assuming this is your page file)
+'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import { overtimeService, type OvertimeFormData } from '@/services/overtime';
+import { useToast } from '@/hooks/use-toast';
+import { getJakartaDateString, formatJakartaDate, WORKING_HOURS } from '@/lib/timezone';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
+import OvertimeRequestModal from '@/app/components/User/checklock/OvertimeRequestModal'; // Import the new component
 
 export default function ChecklockOverview() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [reason, setReason] = useState('');
-  const [sendTime, setSendTime] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Filter states
   const [filters, setFilters] = useState({
     dateFrom: '',
@@ -19,9 +23,8 @@ export default function ChecklockOverview() {
     workHoursMin: '',
     workHoursMax: ''
   });
-
   // Sample data with more entries for filtering
-  const [attendanceData, setAttendanceData] = useState([
+  const attendanceData = [
     {
       id: 1,
       date: 'March 01, 2025',
@@ -58,31 +61,17 @@ export default function ChecklockOverview() {
       status: 'Late',
       statusColor: 'red'
     }
-  ]);
+  ];
 
   const openModal = () => {
-    const now = new Date();
-    const formattedTime = now.toLocaleTimeString('en-GB', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-    setSendTime(formattedTime);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
-    setReason('');
     setIsModalOpen(false);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log({ reason, sendTime });
-    closeModal();
-  };
-
-  const handleFilterChange = (key, value) => {
+  const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({
       ...prev,
       [key]: value
@@ -102,7 +91,7 @@ export default function ChecklockOverview() {
 
   // Filter function
   const filteredData = attendanceData.filter(item => {
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       item.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.status.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -113,16 +102,21 @@ export default function ChecklockOverview() {
     const fromDate = filters.dateFrom ? new Date(filters.dateFrom) : null;
     const toDate = filters.dateTo ? new Date(filters.dateTo) : null;
 
-    const matchesDateRange = (!fromDate || itemDate >= fromDate) && 
-                           (!toDate || itemDate <= toDate);
+    const matchesDateRange = (!fromDate || itemDate >= fromDate) &&
+      (!toDate || itemDate <= toDate);
 
-    return matchesSearch && matchesStatus && matchesDateRange;
+    // TODO: Implement work hours filtering logic based on 'workHoursMin' and 'workHoursMax'
+    // For now, it only checks for search, status, and date range.
+    // You'll need to parse 'item.workHours' (e.g., '10h 5m') into a comparable number (e.g., minutes or hours)
+    // and then compare with filters.workHoursMin and filters.workHoursMax.    return matchesSearch && matchesStatus && matchesDateRange;
   });
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex justify-between items-center mb-4">
+    <AuthWrapper requireAdmin={false}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-100 p-6">
+          <div className="bg-white rounded-lg shadow p-4">
+            <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Checklock Overview</h2>
           <div className="flex space-x-2">
             <input
@@ -132,7 +126,7 @@ export default function ChecklockOverview() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="px-3 py-2 border rounded-md focus:ring focus:border-blue-300"
             />
-            <button 
+            <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
             >
@@ -235,16 +229,16 @@ export default function ChecklockOverview() {
                     <td className="p-2 text-center">
                       <button
                         onClick={openModal}
-                        className="px-2 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                        className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
+                        title="Request Overtime"
                       >
-                        +
-                      </button>
-                    </td>
+                        Request OT
+                      </button>                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="p-4 text-center text-gray-500">
+                  <td colSpan={6} className="p-4 text-center text-gray-500">
                     No data found matching your filters
                   </td>
                 </tr>
@@ -265,56 +259,12 @@ export default function ChecklockOverview() {
             <button className="px-2 py-1 border rounded">1</button>
             <button className="px-2 py-1 border rounded bg-blue-500 text-white">2</button>
             <button className="px-2 py-1 border rounded">3</button>
-          </div>
-        </div>
+          </div>        </div>
       </div>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">Overtime Form</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-700 block mb-1">Date</label>
-                <p className="text-gray-800">{new Date().toLocaleDateString('en-US', {
-                  year: 'numeric', month: 'long', day: '2-digit'
-                })}</p>
-              </div>
-              <div>
-                <label className="text-sm text-gray-700 block mb-1">Reason</label>
-                <input
-                  type="text"
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md focus:ring focus:border-blue-300"
-                  placeholder="Enter Content For The Letter Type"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-700 block mb-1">Time Sending</label>
-                <p className="text-gray-800">{sendTime}</p>
-              </div>
-              <div className="flex justify-end space-x-2 pt-4 border-t">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-800 text-white rounded hover:bg-blue-900"
-                >
-                  Submit
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <OvertimeRequestModal isOpen={isModalOpen} onClose={closeModal} />
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }

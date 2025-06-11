@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function SignInForm() {
     const router = useRouter();
+    const { login } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
@@ -15,12 +16,10 @@ export default function SignInForm() {
         password: "",
         general: "",
     });
-    const [showPassword, setShowPassword] = useState(false);
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const [showPassword, setShowPassword] = useState(false);    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        let newErrors = {
+        const newErrors = {
             email: "",
             password: "",
             general: "",
@@ -38,37 +37,16 @@ export default function SignInForm() {
         setIsLoading(true);
 
         try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({
-                    login: email,
-                    password: password,
-                    remember: rememberMe,
-                }),
-            });
+            const success = await login(email, password, rememberMe);
 
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                // Store token
-                const storage = rememberMe ? localStorage : sessionStorage;
-                storage.setItem('auth_token', result.data.token);
-                storage.setItem('user_data', JSON.stringify(result.data.user));
-                  // Redirect based on user role
-                if (result.data.user.role === 'super_admin' || result.data.user.role === 'admin') {
-                    router.push('/admin/dashboard');
-                } else {
-                    router.push('/user');
-                }
+            if (success) {
+                // Redirect will be handled by the auth system
+                router.push('/user');
             } else {
                 setErrors({
                     email: "",
                     password: "",
-                    general: result.message || "Login failed. Please check your credentials.",
+                    general: "Invalid credentials. Please check your email and password.",
                 });
             }
         } catch (error) {
@@ -76,12 +54,12 @@ export default function SignInForm() {
             setErrors({
                 email: "",
                 password: "",
-                general: "Connection error. Please check your internet connection and try again.",
+                general: "Login failed. Please try again.",
             });
         } finally {
             setIsLoading(false);
         }
-    };    return (
+    };return (
         <form onSubmit={handleSubmit} className="space-y-5 text-black">
             {errors.general && (
                 <div className="p-3 rounded bg-red-100 border border-red-400 text-red-700 text-sm">

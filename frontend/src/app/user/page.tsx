@@ -1,15 +1,50 @@
 'use client';
 
 import { CheckCircle, Clock, FileText, Calendar, MapPin, Coffee, Star, TrendingUp } from "lucide-react";
+import { useJakartaTime, useWorkingHours } from '@/hooks/use-timezone';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
 
 export default function UserDashboardPage() {
+  const { formattedDate } = useJakartaTime();
+  const { isWorkingHours, isOvertimeHours, currentTime } = useWorkingHours();
+  
+  const getGreeting = () => {
+    const hour = parseInt(currentTime.split(':')[0]);
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <AuthWrapper requireAdmin={false}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl p-6 mb-6">
-          <h1 className="text-2xl font-bold mb-2">Good morning, John!</h1>
-          <p className="text-indigo-100">Ready to make today productive?</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-2xl font-bold mb-2">{getGreeting()}, John!</h1>
+              <p className="text-indigo-100">Ready to make today productive?</p>
+            </div>
+            <div className="text-right">
+              <p className="text-indigo-100 text-sm">Jakarta Time (WIB)</p>
+              <p className="text-xl font-semibold">{currentTime}</p>
+              <p className="text-indigo-200 text-sm">{formattedDate}</p>
+              <div className="mt-2">
+                {isWorkingHours && (
+                  <span className="inline-block bg-green-500 text-white text-xs px-2 py-1 rounded">
+                    Working Hours
+                  </span>
+                )}
+                {isOvertimeHours && (
+                  <span className="inline-block bg-orange-500 text-white text-xs px-2 py-1 rounded">
+                    Overtime Hours
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -21,7 +56,7 @@ export default function UserDashboardPage() {
               <div className="bg-white rounded-lg shadow-sm border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Today's Status</p>
+                    <p className="text-sm font-medium text-gray-600">Today&apos;s Status</p>
                     <p className="text-lg font-bold text-green-600">Checked In</p>
                   </div>
                   <div className="p-3 bg-green-100 rounded-lg">
@@ -93,7 +128,7 @@ export default function UserDashboardPage() {
             {/* Weekly Summary */}
             <div className="bg-white rounded-lg shadow-sm border">
               <div className="p-6 border-b">
-                <h3 className="text-lg font-semibold text-gray-900">This Week's Summary</h3>
+                <h3 className="text-lg font-semibold text-gray-900">This Week&apos;s Summary</h3>
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -221,9 +256,10 @@ export default function UserDashboardPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </div>        </div>
       </div>
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }

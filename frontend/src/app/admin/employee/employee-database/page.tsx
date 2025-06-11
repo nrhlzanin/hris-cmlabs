@@ -1,6 +1,8 @@
 ﻿'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import AuthWrapper from '@/components/auth/AuthWrapper';
 
 interface Employee {
   nik: string;
@@ -105,8 +107,19 @@ export default function EmployeeTable() {
 
   const [showImportModal, setShowImportModal] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
-  const [importLoading, setImportLoading] = useState(false);
-  const [importResult, setImportResult] = useState<any>(null);
+  const [importLoading, setImportLoading] = useState(false);  const [importResult, setImportResult] = useState<{
+    success: boolean;
+    message: string;
+    imported_count?: number;
+    errors?: string[];
+    data?: {
+      imported: number;
+      failed: number;
+      total_rows: number;
+    };
+    total_errors?: number;
+    duplicates?: string[];
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch filter options from existing employees
@@ -146,9 +159,8 @@ export default function EmployeeTable() {
       console.error('Error fetching filter options:', error);
     }
   };
-
   // Fetch employees data
-  const fetchEmployees = async () => {
+  const fetchEmployees = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
@@ -198,19 +210,15 @@ export default function EmployeeTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, perPage, searchTerm, filters]);
 
   // Initial load
   useEffect(() => {
     fetchFilterOptions();
-  }, []);
-
-  // Fetch when dependencies change
+  }, []);  // Fetch when dependencies change
   useEffect(() => {
     fetchEmployees();
-  }, [currentPage, perPage, searchTerm, filters]);
-
-  // Handle search with debounce
+  }, [fetchEmployees]);  // Handle search with debounce
   useEffect(() => {
     const timer = setTimeout(() => {
       if (currentPage !== 1) {
@@ -221,7 +229,7 @@ export default function EmployeeTable() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, currentPage, fetchEmployees]);
 
   // Handle filter change
   const handleFilterChange = (filterKey: string, value: string) => {
@@ -412,9 +420,10 @@ export default function EmployeeTable() {
       </div>
     );
   }
-
   return (
-    <div className="min-h-screen bg-gray-100 py-10">
+    <AuthWrapper requireAdmin={true}>
+      <DashboardLayout>
+        <div className="min-h-screen bg-gray-100 py-10">
       <div className="max-w-7xl mx-auto px-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -919,8 +928,7 @@ export default function EmployeeTable() {
                           <p key={index} className="text-sm text-red-700 mb-1">
                             {error}
                           </p>
-                        ))}
-                        {importResult.total_errors > importResult.errors.length && (
+                        ))}                        {importResult.total_errors && importResult.total_errors > importResult.errors.length && (
                           <p className="text-sm text-red-600 font-medium">
                             ... and {importResult.total_errors - importResult.errors.length} more errors
                           </p>
@@ -963,9 +971,10 @@ export default function EmployeeTable() {
                 </>
               )}
             </div>
-          </div>
-        )}
+          </div>        )}
       </div>
     </div>
+      </DashboardLayout>
+    </AuthWrapper>
   );
 }

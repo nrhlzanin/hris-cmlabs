@@ -21,12 +21,11 @@ export default function SignInEmployeePage() {
       <div className="w-full md:w-1/2 h-64 md:h-auto relative">
         <Link
           href="/"
-          className="absolute top-4 left-4 bg-gradient-to-r from-blue-500 to-blue-700 text-white px-4 py-2 rounded-full shadow-lg hover:from-blue-700 hover:to-blue-500 hover:scale-105 transition-all duration-300 flex items-center justify-center z-10"
-        >
+        className="absolute top-4 left-4 z-10 flex items-center justify-center rounded-full bg-gray-800 px-4 py-2 text-white shadow-lg transition-all duration-200 ease-in-out hover:bg-gray-700 hover:-translate-y-px active:scale-95">
           <span className="text-xl">&#8592;</span>
         </Link>
         <Image
-          src="/img/Login.png"
+          src="/img/signin.jpg"
           alt="HRIS Illustration"
           fill
           className="object-cover"
