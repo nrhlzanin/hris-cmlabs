@@ -52,6 +52,22 @@ class TimezoneHelper
     }
 
     /**
+     * Format datetime for Jakarta timezone (alias for formatJakarta)
+     */
+    public static function formatJakartaTime($datetime, string $format = 'H:i:s'): string
+    {
+        return self::formatJakarta($datetime, $format);
+    }
+
+    /**
+     * Format datetime for Jakarta timezone date
+     */
+    public static function formatJakartaDate($datetime, string $format = 'Y-m-d'): string
+    {
+        return self::formatJakarta($datetime, $format);
+    }
+
+    /**
      * Get Jakarta date string (Y-m-d)
      */
     public static function getJakartaDate($datetime = null): string
