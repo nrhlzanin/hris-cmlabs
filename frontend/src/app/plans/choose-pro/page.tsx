@@ -5,7 +5,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { PACKAGE_PLANS } from '../config';
+import { usePlans } from '@/hooks/usePlans';
+import { usePricingCalculation } from '@/hooks/usePricingCalculation';
 import { Plan, CartItem } from '../types';
 
 export default function ChoosePackagePro() {
@@ -13,6 +14,15 @@ export default function ChoosePackagePro() {
   const [employeeCount, setEmployeeCount] = useState(2);
   const [teamSize, setTeamSize] = useState("1 - 50");
   const [plan, setPlan] = useState<Plan | null>(null);
+  const { packagePlans, loading } = usePlans();
+
+  // Use the pricing calculation hook
+  const { pricingData, isCalculating, error: pricingError } = usePricingCalculation({
+    planId: plan?.id || null,
+    billingPeriod,
+    quantity: employeeCount,
+    enabled: !!plan
+  });
 
   useEffect(() => {
     // Load plan data
@@ -20,25 +30,24 @@ export default function ChoosePackagePro() {
     if (savedPlan) {
       setPlan(JSON.parse(savedPlan));
     } else {
-      // Fallback to Pro plan from config
-      const proPlan = PACKAGE_PLANS.find((p: any) => p.id === 'pro');
+      // Fallback to Pro plan from API/context
+      const proPlan = packagePlans.find((p: any) => p.id === 'pro');
       if (proPlan) setPlan(proPlan);
     }
-  }, []);
+  }, [packagePlans]);
 
   useEffect(() => {
     const defaultCount = parseInt(teamSize.split("-")[0].trim());
     setEmployeeCount(defaultCount);
   }, [teamSize]);
-
   const getCurrentPrice = () => {
     if (!plan) return 0;
     return billingPeriod === 'yearly' ? plan.price.yearly : plan.price.monthly;
   };
 
-  const subtotal = getCurrentPrice() * employeeCount;
-  const tax = Math.round(subtotal * 0.11); // 11% VAT
-  const total = subtotal + tax;
+  const subtotal = pricingData.subtotal;
+  const tax = pricingData.taxAmount;
+  const total = pricingData.totalAmount;
 
   const handleConfirmUpgrade = () => {
     if (!plan) return;
@@ -59,9 +68,18 @@ export default function ChoosePackagePro() {
     // Navigate to payment
     window.location.href = '/plans/payment';
   };
-
   return (
     <main className="bg-white text-gray-900 font-inter min-h-screen flex flex-col">
+      {loading && (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading plan details...</p>
+          </div>
+        </div>
+      )}
+      
+      {!loading && (
       <div className="max-w-7xl mx-auto px-4 py-12 flex-grow grid grid-cols-1 sm:grid-cols-2 gap-10">
         {/* Left Section */}
         <div className="flex flex-col justify-between">
@@ -191,9 +209,7 @@ export default function ChoosePackagePro() {
           <div className="flex justify-between font-bold text-lg mb-6">
             <span>Total</span>
             <span>Rp {total.toLocaleString('id-ID')}</span>
-          </div>
-
-          <button 
+          </div>          <button 
             onClick={handleConfirmUpgrade}
             className="w-full bg-blue-900 text-white py-3 rounded hover:bg-blue-800 font-semibold"
           >
@@ -201,6 +217,7 @@ export default function ChoosePackagePro() {
           </button>
         </div>
       </div>
+      )}
     </main>
   );
 }

@@ -5,7 +5,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { PACKAGE_PLANS } from '../config';
+import { usePlans } from '@/hooks/usePlans';
+import { usePricingCalculation } from '@/hooks/usePricingCalculation';
 import { Plan, CartItem } from '../types';
 
 export default function ChoosePackagePage() {
@@ -13,6 +14,15 @@ export default function ChoosePackagePage() {
   const [employeeCount, setEmployeeCount] = useState(2);
   const [teamSize, setTeamSize] = useState("1 - 50");
   const [plan, setPlan] = useState<Plan | null>(null);
+  const { packagePlans, loading } = usePlans();
+
+  // Use the pricing calculation hook
+  const { pricingData, isCalculating, error: pricingError } = usePricingCalculation({
+    planId: plan?.id || null,
+    billingPeriod,
+    quantity: employeeCount,
+    enabled: !!plan
+  });
 
   useEffect(() => {
     // Load plan data
@@ -20,13 +30,11 @@ export default function ChoosePackagePage() {
     if (savedPlan) {
       setPlan(JSON.parse(savedPlan));
     } else {
-      // Fallback to Lite plan from config
-      const litePlan = PACKAGE_PLANS.find((p: any) => p.id === 'lite');
+      // Fallback to Lite plan from API/context
+      const litePlan = packagePlans.find((p: any) => p.id === 'lite');
       if (litePlan) setPlan(litePlan);
     }
-  }, []);
-
-  useEffect(() => {
+  }, [packagePlans]);  useEffect(() => {
     const defaultCount = parseInt(teamSize.split("-")[0].trim());
     setEmployeeCount(defaultCount);
   }, [teamSize]);
@@ -35,22 +43,19 @@ export default function ChoosePackagePage() {
     if (!plan) return 0;
     return billingPeriod === 'yearly' ? plan.price.yearly : plan.price.monthly;
   };
-
-  const subtotal = getCurrentPrice() * employeeCount;
-  const tax = Math.round(subtotal * 0.11); // 11% VAT
-  const total = subtotal + tax;
+  const subtotal = pricingData.subtotal;
+  const tax = pricingData.taxAmount;
+  const total = pricingData.totalAmount;
 
   const handleConfirmUpgrade = () => {
-    if (!plan) return;
-
-    const cartItem: CartItem = {
+    if (!plan) return;    const cartItem: CartItem = {
       planId: plan.id,
       planName: plan.name,
       planType: 'package',
       billingPeriod: billingPeriod,
       quantity: employeeCount,
-      unitPrice: getCurrentPrice(),
-      totalPrice: total
+      unitPrice: pricingData.unitPrice,
+      totalPrice: pricingData.totalAmount
     };
 
     // Store cart data for payment page
@@ -59,9 +64,18 @@ export default function ChoosePackagePage() {
     // Navigate to payment
     window.location.href = '/plans/payment';
   };
-
   return (
     <main className="bg-white text-gray-900 font-inter min-h-screen flex flex-col">
+      {loading && (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading plan details...</p>
+          </div>
+        </div>
+      )}
+      
+      {!loading && (
       <div className="max-w-7xl mx-auto px-4 py-12 flex-grow grid grid-cols-1 sm:grid-cols-2 gap-10">
         {/* Left Section */}
         <div className="flex flex-col justify-between">
@@ -175,36 +189,60 @@ export default function ChoosePackagePage() {
             </div>            <div className="grid grid-cols-3 gap-x-2">
               <span>Price per User</span>
               <span className="text-center">:</span>
-              <span>Rp {getCurrentPrice().toLocaleString('id-ID')}</span>
+              <span>
+                {isCalculating ? (
+                  <span className="text-blue-600">Calculating...</span>
+                ) : (
+                  `Rp ${pricingData.unitPrice.toLocaleString('id-ID')}`
+                )}
+              </span>
             </div>
           </div>
 
           <hr className="my-6 border-black" />          <div className="text-sm space-y-2">
             <div className="flex justify-between">
               <span>Subtotal</span>
-              <span>Rp {subtotal.toLocaleString('id-ID')}</span>
+              <span>
+                {isCalculating ? (
+                  <span className="text-blue-600">Calculating...</span>
+                ) : (
+                  `Rp ${subtotal.toLocaleString('id-ID')}`
+                )}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>Tax (11%)</span>
-              <span>Rp {tax.toLocaleString('id-ID')}</span>
+              <span>
+                {isCalculating ? (
+                  <span className="text-blue-600">Calculating...</span>
+                ) : (
+                  `Rp ${tax.toLocaleString('id-ID')}`
+                )}
+              </span>
             </div>
           </div>
 
-          <hr className="my-6 border-black" />
-
-          <div className="flex justify-between font-bold text-lg mb-6">
+          <hr className="my-6 border-black" />          <div className="flex justify-between font-bold text-lg mb-6">
             <span>Total</span>
-            <span>Rp {total.toLocaleString('id-ID')}</span>
+            <span>
+              {isCalculating ? (
+                <span className="text-blue-600">Calculating...</span>
+              ) : (
+                `Rp ${total.toLocaleString('id-ID')}`
+              )}
+            </span>
           </div>
 
           <button 
             onClick={handleConfirmUpgrade}
-            className="w-full bg-blue-900 text-white py-3 rounded hover:bg-blue-800 font-semibold"
+            disabled={isCalculating || loading}
+            className="w-full bg-blue-900 text-white py-3 rounded hover:bg-blue-800 font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            Confirm and upgrade
+            {isCalculating ? 'Calculating...' : 'Confirm and upgrade'}
           </button>
         </div>
       </div>
+      )}
     </main>
   );
 }
