@@ -44,61 +44,86 @@ export default function OvertimeOverview() {
     <>
       <div className="min-h-screen bg-gray-100 py-6 px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-            <h1 className="text-2xl font-bold text-gray-800">Overtime Overview</h1>
-            <div className="flex flex-wrap gap-2 items-center">
-              <div className="relative">
-                <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </span>
-                <input type="text" placeholder="Search Employee" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+          <div className="bg-white rounded-xl shadow overflow-hidden">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Overtime Overview</h1>
+              <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
+                <div className="relative w-full sm:w-auto">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </span>
+                  <input
+                    type="text"
+                    placeholder="Search Employee"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full sm:w-60 pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
+                <button className="border px-4 py-2 rounded-lg bg-white hover:bg-gray-100 text-sm">Filter</button>
+                <button
+                  onClick={() => setFormModalOpen(true)}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm"
+                >
+                  Add Data
+                </button>
               </div>
-              <button className="border px-4 py-2 rounded-lg bg-white hover:bg-gray-100">Filter</button>
-              <button onClick={() => setFormModalOpen(true)} className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">Add Data</button>
             </div>
-          </div>
 
-          <div className="overflow-x-auto bg-white rounded-xl shadow">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr className="text-gray-600 text-sm">
-                  <th className="px-6 py-4 text-left">Employee Name</th>
-                  <th className="px-6 py-4 text-left">Position</th>
-                  <th className="px-6 py-4 text-left">Branch</th>
-                  <th className="px-6 py-4 text-left">Grade</th>
-                  <th className="px-6 py-4 text-left">Status</th>
-                  <th className="px-6 py-4 text-center">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredEmployees.map((emp) => (
-                  <tr key={emp.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200"></div>
-                        <div>
-                          <div className="font-semibold text-gray-800">{emp.name}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">{emp.position}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{emp.branch}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">{emp.grade}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColor[emp.status]}`}>{emp.status}</span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button onClick={() => handleViewDetails(emp)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-xs hover:bg-blue-700">View</button>
-                    </td>
+            {/* Table */}
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr className="text-gray-600">
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left">Employee Name</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left">Position</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left">Branch</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left">Grade</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-left">Status</th>
+                    <th className="px-4 md:px-6 py-3 md:py-4 text-center">Details</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredEmployees.map((emp) => (
+                    <tr key={emp.id} className="hover:bg-gray-50">
+                      <td className="px-4 md:px-6 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gray-200"></div>
+                          <div>
+                            <div className="font-semibold text-gray-800">{emp.name}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap">{emp.position}</td>
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap">{emp.branch}</td>
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap">{emp.grade}</td>
+                      <td className="px-4 md:px-6 py-3 whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusColor[emp.status]}`}>
+                          {emp.status}
+                        </span>
+                      </td>
+                      <td className="px-4 md:px-6 py-3 text-center">
+                        <button
+                          onClick={() => handleViewDetails(emp)}
+                          className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-blue-700"
+                        >
+                          View
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-            <div className="p-4 flex justify-between items-center text-sm text-gray-600">
-              <span>Showing 1 to {filteredEmployees.length} out of 60 records</span>
+            {/* Pagination */}
+            <div className="p-4 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600 gap-2">
+              <span>
+                Showing 1 to {filteredEmployees.length} out of 60 records
+              </span>
               <div className="flex items-center gap-2">
                 <button className="px-2 py-1 rounded bg-gray-200 text-gray-600" disabled>{'<'}</button>
                 <span>1</span>
@@ -108,6 +133,8 @@ export default function OvertimeOverview() {
           </div>
         </div>
       </div>
+
+
       <DetailModal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} data={detailData} employee={selectedEmployee} />
       <FormModal isOpen={formModalOpen} onClose={() => setFormModalOpen(false)} />
     </>
