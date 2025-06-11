@@ -73,6 +73,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/letters/employee/{employeeName}', [LetterController::class, 'getByEmployee']);
     Route::post('/letters/generate-for-employee', [LetterController::class, 'generateForEmployee']);
     Route::get('/available-letter-formats', [LetterController::class, 'getAvailableFormats']);
+    Route::get('/letters/{id}/history', [LetterController::class, 'getHistory']);
+    
+    // Admin only letter routes
+    Route::middleware('admin')->group(function () {
+        Route::post('/letters/{id}/approve', [LetterController::class, 'approve']);
+        Route::post('/letters/{id}/decline', [LetterController::class, 'decline']);
+    });
     
     // Overtime routes
     Route::prefix('overtime')->group(function () {
