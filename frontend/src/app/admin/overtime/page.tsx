@@ -2,19 +2,18 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Eye, User, Calendar, Timer } from 'lucide-react';
+import { FileText, Clock, CheckCircle, XCircle, AlertCircle, Search, Filter, Eye, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { overtimeService, type OvertimeRecord } from '@/services/overtime';
 import { formatJakartaDate, formatJakartaTime } from '@/lib/timezone';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import AuthWrapper from '@/components/auth/AuthWrapper';
 
 export default function AdminOvertimePage() {
-  const [records, setRecords] = useState<OvertimeRecord[]>([]);
+  const [overtimeRecords, setOvertimeRecords] = useState<OvertimeRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState<OvertimeRecord | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -25,11 +24,9 @@ export default function AdminOvertimePage() {
     date_from: '',
     date_to: ''
   });
-  const [submitting, setSubmitting] = useState(false);
-  const { toast } = useToast();
+  const [submitting, setSubmitting] = useState(false);  const { toast } = useToast();
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const loadOvertimeRecords = useCallback(async () => {
     try {
       setLoading(true);
       const response = await overtimeService.getOvertimeRecords({
@@ -38,9 +35,7 @@ export default function AdminOvertimePage() {
         date_from: filters.date_from || undefined,
         date_to: filters.date_to || undefined,
         per_page: 50
-      });
-      setOvertimeRecords(response.data);    } catch (error) {
-      console.error('Error loading overtime records:', error);
+      });      setOvertimeRecords(response.data);    } catch {
       toast({
         title: 'Error',
         description: 'Failed to load overtime records',
@@ -48,28 +43,24 @@ export default function AdminOvertimePage() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [filters, toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    loadOvertimeRecords();
+  }, [loadOvertimeRecords]);
 
   const handleViewDetail = (record: OvertimeRecord) => {
     setSelectedRecord(record);
     setDetailModalOpen(true);
   };
-
   const handleApprovalAction = (record: OvertimeRecord) => {
     setSelectedRecord(record);
     setApprovalModalOpen(true);
   };
 
-  const openApprove = (rec: OvertimeRecord) => {
-    setSelected(rec);
-    setApproveOpen(true);
-  };
+  const handleSubmitApproval = async (status: 'approved' | 'rejected', remarks?: string) => {
+    if (!selectedRecord) return;
 
-  const submitApproval = async (status: 'approved' | 'rejected') => {
-    if (!selected) return;
-    setSubmitting(true);
     try {
       setSubmitting(true);
       await overtimeService.updateOvertimeStatus(selectedRecord.id, {
@@ -80,10 +71,8 @@ export default function AdminOvertimePage() {
       toast({
         title: 'Success',
         description: `Overtime request ${status} successfully`,
-      });
-      setApprovalModalOpen(false);
-      loadOvertimeRecords();    } catch (error) {
-      console.error('Error updating overtime status:', error);
+      });      setApprovalModalOpen(false);
+      loadOvertimeRecords();    } catch {
       toast({
         title: 'Error',
         description: `Failed to ${status === 'approved' ? 'approve' : 'reject'} overtime request`,
@@ -93,12 +82,16 @@ export default function AdminOvertimePage() {
     }
   };
 
-  const renderIcon = (status: string) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'approved': return <CheckCircle className="h-5 w-5 text-green-500" />;
-      case 'rejected': return <XCircle className="h-5 w-5 text-red-500" />;
-      case 'pending': return <Clock className="h-5 w-5 text-yellow-500" />;
-      default: return <AlertCircle className="h-5 w-5 text-gray-500" />;
+      case 'approved':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'rejected':
+        return <XCircle className="h-5 w-5 text-red-500" />;
+      case 'pending':
+        return <Clock className="h-5 w-5 text-yellow-500" />;
+      default:
+        return <AlertCircle className="h-5 w-5 text-blue-500" />;
     }
   };
 
@@ -114,9 +107,9 @@ export default function AdminOvertimePage() {
         return 'outline' as const;
     }
   };
-
   const formatTime = (timeString: string | null) => {
     if (!timeString) return 'Not set';
+    // Create a date object with the time in Jakarta timezone
     const date = new Date(`1970-01-01T${timeString}`);
     return formatJakartaTime(date);
   };
@@ -129,301 +122,277 @@ export default function AdminOvertimePage() {
     return overtime.status === 'pending' && !isIncomplete(overtime);
   };
 
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }));
-  };
-  // Filter records based on search
-  const filteredRecords = overtimeRecords.filter(record => {
-    const searchLower = filters.search.toLowerCase();
-    return (
-      record.employee?.name?.toLowerCase().includes(searchLower) ||
-      record.employee?.employee_id?.toLowerCase().includes(searchLower) ||
-      record.reason?.toLowerCase().includes(searchLower)
-    );
-  });
-
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Clock className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading...</span>
-      </div>
-    );
-  }
-  return (
-    <AuthWrapper requireAdmin={true}>
-      <DashboardLayout>
-        <div className="min-h-screen bg-gray-100 py-6 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-xl shadow overflow-hidden">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">Overtime Management</h1>
-                <p className="text-gray-600 mt-1">Review and approve overtime requests</p>
-              </div>
-              <div className="flex flex-wrap gap-2 items-center w-full sm:w-auto">
-                <div className="relative w-full sm:w-auto">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    type="text"
-                    placeholder="Search employee or purpose..."
-                    value={filters.search}
-                    onChange={(e) => handleFilterChange('search', e.target.value)}
-                    className="w-full sm:w-64 pl-10"
-                  />
-                </div>
-                <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
-                  <SelectTrigger className="w-full sm:w-auto">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Status</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6 pt-0">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <Clock className="h-8 w-8 text-yellow-500" />
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Pending</p>
-                      <p className="text-2xl font-bold">{overtimeRecords.filter(r => r.status === 'pending').length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-8 w-8 text-green-500" />
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Approved</p>
-                      <p className="text-2xl font-bold">{overtimeRecords.filter(r => r.status === 'approved').length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <XCircle className="h-8 w-8 text-red-500" />
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Rejected</p>
-                      <p className="text-2xl font-bold">{overtimeRecords.filter(r => r.status === 'rejected').length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center">
-                    <Timer className="h-8 w-8 text-blue-500" />
-                    <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">Total</p>
-                      <p className="text-2xl font-bold">{overtimeRecords.length}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Employee
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date & Time
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Duration
-                    </th>                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Reason
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredRecords.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                        No overtime records found
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredRecords.map((record) => (
-                      <tr key={record.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                              <User className="h-6 w-6 text-gray-600" />
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">
-                                {record.employee?.name || 'Unknown'}
-                              </div>
-                              <div className="text-sm text-gray-500">
-                                ID: {record.employee?.employee_id || 'N/A'}
-                              </div>
-                            </div>
-                          </div>
-                        </td>                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {formatJakartaDate(new Date(record.overtime_date || record.date))}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            {formatTime(record.start_time)} - {formatTime(record.end_time)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {record.duration_hours ? `${record.duration_hours} hours` : 'Incomplete'}
-                          </div>
-                        </td>                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-900 max-w-xs truncate" title={record.reason}>
-                            {record.reason || 'No reason specified'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge variant={getStatusVariant(record.status)} className="flex items-center gap-1 w-fit">
-                            {getStatusIcon(record.status)}
-                            {record.status}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleViewDetail(record)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              View
-                            </Button>
-                            {canApprove(record) && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleApprovalAction(record)}
-                              >
-                                Review
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <Button variant="outline" disabled>
-                  Previous
-                </Button>
-                <Button variant="outline" disabled>
-                  Next
-                </Button>
-              </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">1</span> to{' '}
-                    <span className="font-medium">{filteredRecords.length}</span> of{' '}
-                    <span className="font-medium">{filteredRecords.length}</span> results
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    <Button variant="outline" disabled className="rounded-l-md">
-                      Previous
-                    </Button>
-                    <Button variant="outline" disabled className="rounded-r-md">
-                      Next
-                    </Button>
-                  </nav>
-                </div>
-              </div>
-            </div>
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Clock className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p>Loading overtime records...</p>
           </div>
         </div>
       </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Overtime Management</h1>
+        <Badge variant="outline" className="text-sm">
+          {overtimeRecords.length} records
+        </Badge>
+      </div>
+
+      {/* Filters */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="text-sm font-medium">Search Employee</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name or employee ID"
+                  value={filters.search}
+                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Status</label>
+              <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All statuses</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Date From</label>
+              <Input
+                type="date"
+                value={filters.date_from}
+                onChange={(e) => setFilters(prev => ({ ...prev, date_from: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Date To</label>
+              <Input
+                type="date"
+                value={filters.date_to}
+                onChange={(e) => setFilters(prev => ({ ...prev, date_to: e.target.value }))}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Overtime Records */}
+      {overtimeRecords.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-medium mb-2">No overtime records found</h3>
+            <p className="text-muted-foreground">
+              No overtime requests match your current filters.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {overtimeRecords.map((record) => (
+            <Card key={record.id} className={isIncomplete(record) ? 'border-yellow-200 bg-yellow-50' : ''}>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <User className="h-5 w-5" />
+                    <div>
+                      <span className="font-medium">{record.employee?.name || 'Unknown Employee'}</span>
+                      <p className="text-sm text-muted-foreground">{record.employee?.employee_id}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusIcon(record.status)}
+                    <Badge variant={getStatusVariant(record.status)}>
+                      {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                    </Badge>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Date</p>
+                    <p className="font-medium">{formatJakartaDate(new Date(record.date), { 
+                      weekday: 'short',
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })} WIB</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Start Time</p>
+                    <p className="font-medium">{formatTime(record.start_time)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">End Time</p>
+                    <p className="font-medium">
+                      {record.end_time ? formatTime(record.end_time) : (
+                        <span className="text-yellow-600">Pending completion</span>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Duration</p>
+                    <p className="font-medium">
+                      {record.duration_hours ? `${record.duration_hours} hours` : (
+                        <span className="text-yellow-600">Pending</span>
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Type</p>
+                    <p className="font-medium capitalize">{record.overtime_type}</p>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Reason</p>
+                  <p className="text-sm">{record.reason}</p>
+                </div>
+
+                {isIncomplete(record) && (
+                  <div className="border border-yellow-300 bg-yellow-50 p-3 rounded-lg mb-4">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <span className="text-sm font-medium text-yellow-700">
+                        Overtime not completed by employee yet
+                      </span>
+                    </div>
+                    <p className="text-xs text-yellow-600 mt-1">
+                      Employee needs to upload completion evidence before this can be approved.
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-4 border-t">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleViewDetail(record)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Details
+                  </Button>
+                  
+                  {canApprove(record) && (
+                    <>
+                      <Button 
+                        size="sm"
+                        onClick={() => handleApprovalAction(record)}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Approve
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleApprovalAction(record)}
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                  
+                  {record.status === 'pending' && isIncomplete(record) && (
+                    <Badge variant="outline" className="text-yellow-600">
+                      Waiting for completion
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Detail Modal */}
       <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Overtime Request Details</DialogTitle>
+            <DialogTitle>Overtime Details</DialogTitle>
           </DialogHeader>
           {selectedRecord && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Employee</p>
-                  <p className="text-sm font-semibold">{selectedRecord.employee?.name}</p>
-                  <p className="text-xs text-gray-500">ID: {selectedRecord.employee?.employee_id}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Employee</p>
+                  <p className="font-medium">{selectedRecord.employee?.name}</p>
+                  <p className="text-sm text-muted-foreground">{selectedRecord.employee?.employee_id}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Status</p>
-                  <Badge variant={getStatusVariant(selectedRecord.status)} className="flex items-center gap-1 w-fit">
-                    {getStatusIcon(selectedRecord.status)}
-                    {selectedRecord.status}
-                  </Badge>
-                </div>                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Date</p>
-                  <p className="text-sm">{formatJakartaDate(new Date(selectedRecord.overtime_date || selectedRecord.date))}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Duration</p>
-                  <p className="text-sm">{selectedRecord.duration_hours ? `${selectedRecord.duration_hours} hours` : 'Incomplete'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Start Time</p>
-                  <p className="text-sm">{formatTime(selectedRecord.start_time)}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">End Time</p>
-                  <p className="text-sm">{formatTime(selectedRecord.end_time)}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Department</p>
+                  <p className="font-medium">{selectedRecord.employee?.department || 'N/A'}</p>
                 </div>
               </div>
-                {selectedRecord.reason && (
+              
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Reason</p>
-                  <p className="text-sm bg-gray-50 p-3 rounded">{selectedRecord.reason}</p>
+                  <p className="text-sm font-medium text-muted-foreground">Date</p>
+                  <p className="font-medium">{new Date(selectedRecord.date).toLocaleDateString()}</p>
                 </div>
-              )}
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Overtime Type</p>
+                  <p className="font-medium capitalize">{selectedRecord.overtime_type}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Start Time</p>
+                  <p className="font-medium">{formatTime(selectedRecord.start_time)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">End Time</p>
+                  <p className="font-medium">{formatTime(selectedRecord.end_time)}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Duration</p>
+                  <p className="font-medium">
+                    {selectedRecord.duration_hours ? `${selectedRecord.duration_hours} hours` : 'N/A'}
+                  </p>
+                </div>
+              </div>
+              
+              <div>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Reason</p>
+                <p className="text-sm bg-gray-50 p-3 rounded">{selectedRecord.reason}</p>
+              </div>
               
               {selectedRecord.tasks_completed && (
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Tasks Completed</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Tasks Completed</p>
                   <p className="text-sm bg-gray-50 p-3 rounded">{selectedRecord.tasks_completed}</p>
                 </div>
               )}
               
               {selectedRecord.supporting_document_url && (
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-2">Supporting Document</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-2">Supporting Document</p>
                   <Button variant="outline" size="sm" asChild>
                     <a href={selectedRecord.supporting_document_url} target="_blank" rel="noopener noreferrer">
                       <FileText className="h-4 w-4 mr-2" />
@@ -435,7 +404,7 @@ export default function AdminOvertimePage() {
               
               {selectedRecord.admin_remarks && (
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Admin Remarks</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Admin Remarks</p>
                   <p className="text-sm bg-blue-50 p-3 rounded border-l-4 border-blue-400">
                     {selectedRecord.admin_remarks}
                   </p>
@@ -446,58 +415,58 @@ export default function AdminOvertimePage() {
         </DialogContent>
       </Dialog>
 
-      {/* Detail Modal */}
-      <Dialog open={isDetailOpen} onOpenChange={setDetailOpen}>
+      {/* Approval Modal */}
+      <Dialog open={approvalModalOpen} onOpenChange={setApprovalModalOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Record Detail</DialogTitle>
+            <DialogTitle>Approve/Reject Overtime</DialogTitle>
           </DialogHeader>
-          {selectedRecord && (
-            <div className="space-y-4">              <div className="text-sm">
-                <p><strong>Employee:</strong> {selectedRecord.employee?.name}</p>
-                <p><strong>Date:</strong> {formatJakartaDate(new Date(selectedRecord.overtime_date || selectedRecord.date))}</p>
-                <p><strong>Duration:</strong> {selectedRecord.duration_hours} hours</p>
-              </div>
-              
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => handleSubmitApproval('approved')}
-                  disabled={submitting}
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  {submitting ? (
-                    <Clock className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                  )}
-                  Approve
-                </Button>
-                <Button 
-                  variant="destructive"
-                  onClick={() => handleSubmitApproval('rejected')}
-                  disabled={submitting}
-                  className="flex-1"
-                >
-                  {submitting ? (
-                    <Clock className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <XCircle className="h-4 w-4 mr-2" />
-                  )}
-                  Reject
-                </Button>
-              </div>
-              
+          <div className="space-y-4">
+            <div className="text-sm">
+              <p><strong>Employee:</strong> {selectedRecord?.employee?.name}</p>
+              <p><strong>Date:</strong> {selectedRecord ? new Date(selectedRecord.date).toLocaleDateString() : ''}</p>
+              <p><strong>Duration:</strong> {selectedRecord?.duration_hours} hours</p>
+            </div>
+            
+            <div className="flex gap-2">
               <Button 
-                variant="outline" 
-                onClick={() => setApprovalModalOpen(false)}
+                onClick={() => handleSubmitApproval('approved')}
                 disabled={submitting}
-                className="w-full"
-              >              Cancel
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {submitting ? (
+                  <Clock className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                )}
+                Approve
+              </Button>
+              <Button 
+                variant="destructive"
+                onClick={() => handleSubmitApproval('rejected')}
+                disabled={submitting}
+                className="flex-1"
+              >
+                {submitting ? (
+                  <Clock className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <XCircle className="h-4 w-4 mr-2" />
+                )}
+                Reject
               </Button>
             </div>
-          )}        </DialogContent>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => setApprovalModalOpen(false)}
+              disabled={submitting}
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
       </Dialog>
-      </DashboardLayout>
-    </AuthWrapper>
+    </div>
   );
 }
