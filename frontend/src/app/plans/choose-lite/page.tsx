@@ -5,16 +5,30 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useAuth } from '@/hooks/use-auth';
 import { usePlans } from '@/hooks/usePlans';
 import { usePricingCalculation } from '@/hooks/usePricingCalculation';
 import { Plan, CartItem } from '../types';
 
 export default function ChoosePackagePage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
   const [employeeCount, setEmployeeCount] = useState(2);
   const [teamSize, setTeamSize] = useState("1 - 50");
   const [plan, setPlan] = useState<Plan | null>(null);
   const { packagePlans, loading } = usePlans();
+
+  // Authentication check
+  useEffect(() => {
+    if (!authLoading && !user) {
+      // Store the current page URL to redirect back after login
+      localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      router.push('/auth/sign-in');
+      return;
+    }
+  }, [user, authLoading, router]);
 
   // Use the pricing calculation hook
   const { pricingData, isCalculating, error: pricingError } = usePricingCalculation({
@@ -46,7 +60,6 @@ export default function ChoosePackagePage() {
   const subtotal = pricingData.subtotal;
   const tax = pricingData.taxAmount;
   const total = pricingData.totalAmount;
-
   const handleConfirmUpgrade = () => {
     if (!plan) return;    const cartItem: CartItem = {
       planId: plan.id,
@@ -64,6 +77,24 @@ export default function ChoosePackagePage() {
     // Navigate to payment
     window.location.href = '/plans/payment';
   };
+
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if user is not authenticated (redirect will happen)
+  if (!user) {
+    return null;
+  }
+
   return (
     <main className="bg-white text-gray-900 font-inter min-h-screen flex flex-col">
       {loading && (

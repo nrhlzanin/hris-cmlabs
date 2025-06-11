@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 import { PAYMENT_METHODS, PACKAGE_PLANS, CURRENCIES, TAX_RATE } from '../config-minimal';
 import { PaymentMethod, BillingInfo, CartItem, PaymentData } from '../types';
 import { usePaymentMethods } from '@/hooks/usePlans';
@@ -16,6 +18,8 @@ import {
 } from '@/components/ui/popups';
 
 export default function PaymentPage() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const { paymentMethods, loading: paymentMethodsLoading } = usePaymentMethods();
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
   const [billingInfo, setBillingInfo] = useState<BillingInfo>({
@@ -42,9 +46,18 @@ export default function PaymentPage() {
   const [showLoadingPopup, setShowLoadingPopup] = useState(false);
   const [showConfirmationPopup, setShowConfirmationPopup] = useState(false);
   const [showWarningPopup, setShowWarningPopup] = useState(false);
-  const [showInfoPopup, setShowInfoPopup] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showInfoPopup, setShowInfoPopup] = useState(false);  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [paymentData, setPaymentData] = useState<any>(null);
+
+  // Authentication check
+  useEffect(() => {
+    if (!authLoading && !user) {
+      // Store the current page URL to redirect back after login
+      localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      router.push('/auth/sign-in');
+      return;
+    }
+  }, [user, authLoading, router]);
 
   // Load cart data from localStorage or URL params
   useEffect(() => {
@@ -301,9 +314,20 @@ export default function PaymentPage() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gray-50 py-8 font-inter">
+      {/* Authentication Loading */}
+      {authLoading && (
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Checking authentication...</p>
+          </div>
+        </div>
+      )}
+
+      {!authLoading && (
+      <>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -905,15 +929,15 @@ export default function PaymentPage() {
         message="Please review your information before proceeding."
         confirmText="Continue"
         cancelText="Cancel"
-      />
-
-      <InfoPopup
+      />      <InfoPopup
         isOpen={showInfoPopup}
         onClose={() => setShowInfoPopup(false)}
         title="Information"
         message="Here's some important information for you."
         confirmText="OK"
       />
+      </>
+      )}
     </div>
   );
 }

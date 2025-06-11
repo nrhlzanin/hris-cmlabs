@@ -5,16 +5,29 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useAuth } from '@/hooks/use-auth';
 import { usePlans } from '@/hooks/usePlans';
 import { usePricingCalculation } from '@/hooks/usePricingCalculation';
 import { Plan, CartItem } from '../types';
 
 export default function ChoosePackagePro() {
+  const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
   const [employeeCount, setEmployeeCount] = useState(2);
   const [teamSize, setTeamSize] = useState("1 - 50");
-  const [plan, setPlan] = useState<Plan | null>(null);
-  const { packagePlans, loading } = usePlans();
+  const [plan, setPlan] = useState<Plan | null>(null);  const { packagePlans, loading } = usePlans();
+
+  // Authentication check
+  useEffect(() => {
+    if (!authLoading && !user) {
+      // Store the current page URL to redirect back after login
+      localStorage.setItem('redirectAfterLogin', window.location.pathname);
+      router.push('/auth/sign-in');
+      return;
+    }
+  }, [user, authLoading, router]);
 
   // Use the pricing calculation hook
   const { pricingData, isCalculating, error: pricingError } = usePricingCalculation({
@@ -67,10 +80,9 @@ export default function ChoosePackagePro() {
     
     // Navigate to payment
     window.location.href = '/plans/payment';
-  };
-  return (
+  };  return (
     <main className="bg-white text-gray-900 font-inter min-h-screen flex flex-col">
-      {loading && (
+      {(loading || authLoading) && (
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -79,7 +91,7 @@ export default function ChoosePackagePro() {
         </div>
       )}
       
-      {!loading && (
+      {!loading && !authLoading && (
       <div className="max-w-7xl mx-auto px-4 py-12 flex-grow grid grid-cols-1 sm:grid-cols-2 gap-10">
         {/* Left Section */}
         <div className="flex flex-col justify-between">
