@@ -1,9 +1,29 @@
-﻿'use client';
+﻿"use client";
 
+<<<<<<< HEAD
 import { BarChart, Calendar, CheckCircle, Clock, Users, FileText, TrendingUp, AlertCircle } from "lucide-react";
 import { useJakartaTime, useWorkingHours } from '@/hooks/use-timezone';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
+=======
+import {
+  BarChart,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Users,
+  FileText,
+  TrendingUp,
+  AlertCircle,
+} from "lucide-react";
+
+import { useJakartaTime, useWorkingHours } from "@/hooks/use-timezone";
+import StatCardDashboard from "@/app/components/admin/dashboard/card";
+import EmployeeBarChart from "@/app/components/admin/dashboard/chart";
+import AttendancePieChart from "@/app/components/admin/dashboard/pie";
+import EmployeeStatusChart from "@/app/components/admin/dashboard/statistic";
+import EmployeeStatusCard from "@/app/components/admin/dashboard/status";
+>>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
 
 export default function DashboardPage() {
   const jakartaTime = useJakartaTime();
@@ -15,8 +35,11 @@ export default function DashboardPage() {
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-xl p-6">
         <div className="flex justify-between items-start">
-          <div>            <h1 className="text-2xl font-bold mb-2">Welcome back, Admin!</h1>
-            <p className="text-blue-100">Here&apos;s what&apos;s happening with your team today.</p>
+          <div>
+            <h1 className="text-2xl font-bold mb-2">Welcome back, Admin!</h1>
+            <p className="text-blue-100">
+              Here's what's happening with your team today.
+            </p>
           </div>
           <div className="text-right">
             <p className="text-blue-100 text-sm">Jakarta Time (WIB)</p>
@@ -38,72 +61,17 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Total Employees */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Employees</p>
-              <p className="text-2xl font-bold text-gray-900">156</p>
-            </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Users className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-          <p className="text-xs text-green-600 mt-2">
-            <TrendingUp className="h-3 w-3 inline mr-1" />
-            +2.5% from last month
-          </p>
-        </div>
+      {/* Summary Cards */}
+      <StatCardDashboard />
 
-        {/* Present Today */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Present Today</p>
-              <p className="text-2xl font-bold text-gray-900">142</p>
-            </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">91.0% attendance rate</p>
-        </div>
-
-        {/* Pending Requests */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Pending Requests</p>
-              <p className="text-2xl font-bold text-gray-900">8</p>
-            </div>
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <Clock className="h-6 w-6 text-orange-600" />
-            </div>
-          </div>
-          <p className="text-xs text-orange-600 mt-2">
-            <AlertCircle className="h-3 w-3 inline mr-1" />
-            Requires attention
-          </p>
-        </div>
-
-        {/* Total Letters */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Letters This Month</p>
-              <p className="text-2xl font-bold text-gray-900">23</p>
-            </div>
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <FileText className="h-6 w-6 text-purple-600" />
-            </div>
-          </div>
-          <p className="text-xs text-gray-500 mt-2">15 approved, 8 pending</p>
-        </div>
+      {/* Charts and Statistics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <EmployeeBarChart />
+        <EmployeeStatusChart />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<<<<<<< HEAD
         {/* Recent Activity */}
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-6 border-b">
@@ -216,6 +184,10 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+=======
+        <AttendancePieChart />
+        <EmployeeStatusCard />
+>>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
       </div>
     </div>
       </DashboardLayout>

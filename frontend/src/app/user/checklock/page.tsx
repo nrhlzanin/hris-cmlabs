@@ -1,23 +1,23 @@
-﻿'use client';
+﻿// app/checklock/overview/page.tsx (assuming this is your page file)
+'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
+<<<<<<< HEAD
 import { overtimeService, type OvertimeFormData } from '@/services/overtime';
 import { useToast } from '@/hooks/use-toast';
 import { getJakartaDateString, formatJakartaDate, WORKING_HOURS } from '@/lib/timezone';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
+=======
+import OvertimeRequestModal from '@/app/components/User/checklock/OvertimeRequestModal'; // Import the new component
+>>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
 
 export default function ChecklockOverview() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [reason, setReason] = useState('');
-  const [sendTime, setSendTime] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [overtimeType, setOvertimeType] = useState<'regular' | 'holiday' | 'weekend'>('regular');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  
+
   // Filter states
   const [filters, setFilters] = useState({
     dateFrom: '',
@@ -60,67 +60,20 @@ export default function ChecklockOverview() {
       date: 'March 04, 2025',
       clockIn: '10:15 AM',
       clockOut: '04:45 PM',
-      workHours: '7h 30m',      status: 'Late',
+      workHours: '7h 30m',
+      status: 'Late',
       statusColor: 'red'
     }
-  ];const openModal = () => {
-    // Set default start time to overtime hours (18:00) Jakarta time
-    setSendTime(WORKING_HOURS.OVERTIME_START);
+  ];
+
+  const openModal = () => {
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
-    setReason('');
     setIsModalOpen(false);
-  };  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!reason.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Please provide a reason for overtime',
-      });
-      return;
-    }
-
-    if (!sendTime) {
-      toast({
-        title: 'Error',
-        description: 'Please select a start time for overtime',
-      });
-      return;
-    }
-
-    setIsSubmitting(true);    try {
-      const formData: OvertimeFormData = {
-        overtime_date: getJakartaDateString(), // Today's date in Jakarta timezone (YYYY-MM-DD format)
-        start_time: sendTime, // Already in HH:MM format from time input
-        overtime_type: overtimeType,
-        reason: reason.trim(),
-      };
-
-      await overtimeService.createOvertime(formData);
-
-      toast({
-        title: 'Success',
-        description: 'Overtime request submitted successfully! Complete it later by uploading evidence in the "My Overtime" page.',
-      });
-
-      // Reset form
-      setReason('');
-      setSendTime('');
-      setOvertimeType('regular');
-      closeModal();
-    } catch (error) {
-      console.error('Failed to submit overtime request:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to submit overtime request. Please try again.',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
   };
+
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({
       ...prev,
@@ -141,7 +94,7 @@ export default function ChecklockOverview() {
 
   // Filter function
   const filteredData = attendanceData.filter(item => {
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       item.date.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.status.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -152,8 +105,13 @@ export default function ChecklockOverview() {
     const fromDate = filters.dateFrom ? new Date(filters.dateFrom) : null;
     const toDate = filters.dateTo ? new Date(filters.dateTo) : null;
 
-    const matchesDateRange = (!fromDate || itemDate >= fromDate) && 
-                           (!toDate || itemDate <= toDate);
+    const matchesDateRange = (!fromDate || itemDate >= fromDate) &&
+      (!toDate || itemDate <= toDate);
+
+    // TODO: Implement work hours filtering logic based on 'workHoursMin' and 'workHoursMax'
+    // For now, it only checks for search, status, and date range.
+    // You'll need to parse 'item.workHours' (e.g., '10h 5m') into a comparable number (e.g., minutes or hours)
+    // and then compare with filters.workHoursMin and filters.workHoursMax.
 
     return matchesSearch && matchesStatus && matchesDateRange;
   });
@@ -172,7 +130,7 @@ export default function ChecklockOverview() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="px-3 py-2 border rounded-md focus:ring focus:border-blue-300"
             />
-            <button 
+            <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
             >
@@ -271,7 +229,8 @@ export default function ChecklockOverview() {
                       <span className={`${item.statusColor === 'green' ? 'bg-green-500' : 'bg-red-600'} text-white px-2 py-1 rounded-full text-xs`}>
                         {item.status}
                       </span>
-                    </td>                    <td className="p-2 text-center">
+                    </td>
+                    <td className="p-2 text-center">
                       <button
                         onClick={openModal}
                         className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 transition-colors"
@@ -280,7 +239,12 @@ export default function ChecklockOverview() {
                         Request OT
                       </button>                    </td>
                   </tr>
+<<<<<<< HEAD
                 ))) : (
+=======
+                ))
+              ) : (
+>>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
                 <tr>
                   <td colSpan={6} className="p-4 text-center text-gray-500">
                     No data found matching your filters
@@ -305,35 +269,9 @@ export default function ChecklockOverview() {
             <button className="px-2 py-1 border rounded">3</button>
           </div>
         </div>
-      </div>      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg">
-            <h3 className="text-lg font-semibold mb-4">Overtime Request Form</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">              <div>
-                <label className="text-sm text-gray-700 block mb-1">Date</label>
-                <p className="text-gray-800 px-3 py-2 bg-gray-50 rounded-md">
-                  {formatJakartaDate(new Date(), { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: '2-digit',
-                    weekday: 'long'
-                  })} (WIB)
-                </p>
-              </div>
-              
-              <div>
-                <label className="text-sm text-gray-700 block mb-1">Start Time <span className="text-red-500">*</span></label>
-                <input
-                  type="time"
-                  value={sendTime}
-                  onChange={(e) => setSendTime(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md focus:ring focus:border-blue-300"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">Select when you will start working overtime</p>
-              </div>
+      </div>
 
+<<<<<<< HEAD
               <div>
                 <label className="text-sm text-gray-700 block mb-1">Overtime Type <span className="text-red-500">*</span></label>
                 <select
@@ -391,6 +329,9 @@ export default function ChecklockOverview() {
             </form>        </div>
       </div>
       )}
+=======
+      <OvertimeRequestModal isOpen={isModalOpen} onClose={closeModal} />
+>>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
     </div>
       </DashboardLayout>
     </AuthWrapper>

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AdminNavbar } from "@/components/admin/AdminNavbar";
+// import { AdminNavbar } from "@/components/admin/AdminNavbar";
 import { getJakartaDateString } from '@/lib/timezone';
 
 interface Employee {
@@ -22,7 +22,7 @@ interface FormData {
   evidence: File | null;
 }
 
-export default function AddAttendancePage() {
+export default function AddChecklock() {
   const router = useRouter();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,21 +41,18 @@ export default function AddAttendancePage() {
   const [errors, setErrors] = useState<Partial<FormData>>({});
 
   useEffect(() => {
-    // Set default dates to today in Jakarta timezone
     const today = getJakartaDateString();
     setFormData(prev => ({
       ...prev,
       startDate: today,
       endDate: today
     }));
-    
-    // Fetch employees
     fetchEmployees();
+    getCurrentLocation();
   }, []);
 
   const fetchEmployees = async () => {
     try {
-      // Mock data - replace with actual API call
       const mockEmployees: Employee[] = [
         { id: 1, name: 'John Doe', email: 'john@example.com' },
         { id: 2, name: 'Jane Smith', email: 'jane@example.com' },
@@ -68,13 +65,24 @@ export default function AddAttendancePage() {
     }
   };
 
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        setFormData(prev => ({
+          ...prev,
+          latitude: position.coords.latitude.toString(),
+          longitude: position.coords.longitude.toString()
+        }));
+      });
+    }
+  };
+
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-    
-    // Clear error when user starts typing
+
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -86,30 +94,32 @@ export default function AddAttendancePage() {
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, evidence: 'File must be smaller than 5MB' }));
+        return;
+      }
       setFormData(prev => ({
         ...prev,
         evidence: file
       }));
+      setErrors(prev => ({ ...prev, evidence: undefined }));
     }
   };
 
   const validateForm = (): boolean => {
     const newErrors: Partial<FormData> = {};
 
-    if (!formData.employeeId) {
-      newErrors.employeeId = 'Please select an employee';
-    }
-
-    if (!formData.startDate) {
-      newErrors.startDate = 'Start date is required';
-    }
-
-    if (!formData.endDate) {
-      newErrors.endDate = 'End date is required';
-    }
-
-    if (formData.startDate && formData.endDate && formData.startDate > formData.endDate) {
+    if (!formData.employeeId) newErrors.employeeId = 'Please select an employee';
+    if (!formData.startDate) newErrors.startDate = 'Start date is required';
+    if (!formData.endDate) newErrors.endDate = 'End date is required';
+    if (formData.startDate > formData.endDate)
       newErrors.endDate = 'End date must be after start date';
+
+    if (!formData.latitude) newErrors.latitude = 'Latitude is required';
+    if (!formData.longitude) newErrors.longitude = 'Longitude is required';
+
+    if (formData.evidence && formData.evidence.size > 5 * 1024 * 1024) {
+      newErrors.evidence = 'Evidence file must be smaller than 5MB';
     }
 
     setErrors(newErrors);
@@ -117,13 +127,10 @@ export default function AddAttendancePage() {
   };
 
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
     try {
-      // TODO: Implement actual API call
       const formDataToSend = new FormData();
       formDataToSend.append('employee_id', formData.employeeId);
       formDataToSend.append('absent_type', formData.absentType);
@@ -131,16 +138,16 @@ export default function AddAttendancePage() {
       formDataToSend.append('end_date', formData.endDate);
       formDataToSend.append('location', formData.location);
       formDataToSend.append('detail_address', formData.detailAddress);
-      formDataToSend.append('latitude', formData.latitude);
-      formDataToSend.append('longitude', formData.longitude);
-      
+      formDataToSend.append('latitude', parseFloat(formData.latitude).toString());
+      formDataToSend.append('longitude', parseFloat(formData.longitude).toString());
+
       if (formData.evidence) {
         formDataToSend.append('evidence', formData.evidence);
       }
 
-      // Simulate API call
+      // Simulasi API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       alert('Attendance record added successfully!');
       router.push('/admin/checklock');
     } catch (error) {
@@ -155,56 +162,34 @@ export default function AddAttendancePage() {
     router.push('/admin/checklock');
   };
 
-  const handleUploadEvidence = async () => {
-    if (!formData.evidence) return;
-    
-    setUploading(true);
-    try {
-      // Simulate upload
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      alert('Evidence uploaded successfully!');
-    } catch (error) {
-      console.error('Error uploading evidence:', error);
-      alert('Error uploading evidence. Please try again.');
-    } finally {
-      setUploading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      <AdminNavbar />
-
+      {/* <AdminNavbar /> */}
       <div className="p-6">
         <div className="bg-white rounded shadow p-6 max-w-5xl mx-auto">
           <h2 className="text-2xl font-semibold mb-4">Add Attendance Record</h2>
           <p className="text-sm text-gray-600 mb-6">All times are in Jakarta timezone (WIB)</p>
-          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left Column */}
+            {/* LEFT */}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Select Employee *</label>
-                <select 
+                <select
                   value={formData.employeeId}
                   onChange={(e) => handleInputChange('employeeId', e.target.value)}
                   className={`w-full border rounded px-3 py-2 ${errors.employeeId ? 'border-red-500' : 'border-gray-300'}`}
                 >
                   <option value="">Choose Employee</option>
-                  {employees.map(employee => (
-                    <option key={employee.id} value={employee.id}>
-                      {employee.name}
-                    </option>
+                  {employees.map(emp => (
+                    <option key={emp.id} value={emp.id}>{emp.name}</option>
                   ))}
                 </select>
-                {errors.employeeId && (
-                  <p className="text-red-500 text-xs mt-1">{errors.employeeId}</p>
-                )}
+                {errors.employeeId && <p className="text-red-500 text-xs mt-1">{errors.employeeId}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">Absent Type</label>
-                <select 
+                <select
                   value={formData.absentType}
                   onChange={(e) => handleInputChange('absentType', e.target.value)}
                   className="w-full border border-gray-300 rounded px-3 py-2"
@@ -220,27 +205,23 @@ export default function AddAttendancePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Start Date (WIB) *</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={formData.startDate}
                     onChange={(e) => handleInputChange('startDate', e.target.value)}
                     className={`w-full border rounded px-3 py-2 ${errors.startDate ? 'border-red-500' : 'border-gray-300'}`}
                   />
-                  {errors.startDate && (
-                    <p className="text-red-500 text-xs mt-1">{errors.startDate}</p>
-                  )}
+                  {errors.startDate && <p className="text-red-500 text-xs mt-1">{errors.startDate}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">End Date (WIB) *</label>
-                  <input 
-                    type="date" 
+                  <input
+                    type="date"
                     value={formData.endDate}
                     onChange={(e) => handleInputChange('endDate', e.target.value)}
                     className={`w-full border rounded px-3 py-2 ${errors.endDate ? 'border-red-500' : 'border-gray-300'}`}
                   />
-                  {errors.endDate && (
-                    <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>
-                  )}
+                  {errors.endDate && <p className="text-red-500 text-xs mt-1">{errors.endDate}</p>}
                 </div>
               </div>
 
@@ -260,31 +241,23 @@ export default function AddAttendancePage() {
                     <span className="text-blue-600 underline">Browse</span>
                   </label>
                   {formData.evidence && (
-                    <p className="text-green-600 mt-2 text-sm">
-                      Selected: {formData.evidence.name}
-                    </p>
+                    <div className="mt-2 text-sm text-green-600">
+                      <p>Selected: {formData.evidence.name}</p>
+                      {formData.evidence.type.startsWith('image/') && (
+                        <img src={URL.createObjectURL(formData.evidence)} alt="Preview" className="mt-2 w-32 rounded shadow" />
+                      )}
+                    </div>
                   )}
+                  {errors.evidence && <p className="text-red-500 text-xs mt-1">{errors.evidence}</p>}
                 </div>
               </div>
-
-              <button 
-                onClick={handleUploadEvidence}
-                disabled={!formData.evidence || uploading}
-                className={`mt-2 w-full py-2 rounded text-white ${
-                  !formData.evidence || uploading 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {uploading ? 'Uploading...' : 'Upload Now'}
-              </button>
             </div>
 
-            {/* Right Column */}
+            {/* RIGHT */}
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Location</label>
-                <select 
+                <select
                   value={formData.location}
                   onChange={(e) => handleInputChange('location', e.target.value)}
                   className="w-full border border-gray-300 rounded px-3 py-2"
@@ -322,8 +295,9 @@ export default function AddAttendancePage() {
                     placeholder="Lat lokasi"
                     value={formData.latitude}
                     onChange={(e) => handleInputChange('latitude', e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
+                    className={`w-full border rounded px-3 py-2 ${errors.latitude ? 'border-red-500' : 'border-gray-300'}`}
                   />
+                  {errors.latitude && <p className="text-red-500 text-xs mt-1">{errors.latitude}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Longitude</label>
@@ -332,22 +306,23 @@ export default function AddAttendancePage() {
                     placeholder="Long lokasi"
                     value={formData.longitude}
                     onChange={(e) => handleInputChange('longitude', e.target.value)}
-                    className="w-full border border-gray-300 rounded px-3 py-2"
+                    className={`w-full border rounded px-3 py-2 ${errors.longitude ? 'border-red-500' : 'border-gray-300'}`}
                   />
+                  {errors.longitude && <p className="text-red-500 text-xs mt-1">{errors.longitude}</p>}
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div className="flex justify-end space-x-4 mt-6">
-            <button 
+            <button
               onClick={handleCancel}
               disabled={loading}
               className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 disabled:opacity-50"
             >
               Cancel
             </button>
-            <button 
+            <button
               onClick={handleSubmit}
               disabled={loading}
               className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 disabled:opacity-50"
