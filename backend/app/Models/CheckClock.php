@@ -21,6 +21,11 @@ class CheckClock extends Model
         'longitude',
         'address',
         'supporting_evidence',
+        'approval_status',
+        'approved_by',
+        'approved_at',
+        'admin_notes',
+        'is_manual_entry',
     ];
 
     /**
@@ -30,8 +35,10 @@ class CheckClock extends Model
     {
         return [
             'check_clock_time' => 'datetime',
+            'approved_at' => 'datetime',
             'latitude' => 'decimal:8',
             'longitude' => 'decimal:8',
+            'is_manual_entry' => 'boolean',
         ];
     }
 
@@ -129,5 +136,69 @@ class CheckClock extends Model
     public function isClockOut(): bool
     {
         return $this->check_clock_type === 'clock_out';
+    }
+
+    /**
+     * Get the approver that approved/declined this record.
+     */
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by', 'id_users');
+    }
+
+    /**
+     * Check if attendance is pending approval.
+     */
+    public function isPending(): bool
+    {
+        return $this->approval_status === 'pending';
+    }
+
+    /**
+     * Check if attendance is approved.
+     */
+    public function isApproved(): bool
+    {
+        return $this->approval_status === 'approved';
+    }
+
+    /**
+     * Check if attendance is declined.
+     */
+    public function isDeclined(): bool
+    {
+        return $this->approval_status === 'declined';
+    }
+
+    /**
+     * Scope to filter by approval status.
+     */
+    public function scopeByApprovalStatus($query, string $status)
+    {
+        return $query->where('approval_status', $status);
+    }
+
+    /**
+     * Scope to get pending records.
+     */
+    public function scopePending($query)
+    {
+        return $query->where('approval_status', 'pending');
+    }
+
+    /**
+     * Scope to get approved records.
+     */
+    public function scopeApproved($query)
+    {
+        return $query->where('approval_status', 'approved');
+    }
+
+    /**
+     * Scope to get declined records.
+     */
+    public function scopeDeclined($query)
+    {
+        return $query->where('approval_status', 'declined');
     }
 }

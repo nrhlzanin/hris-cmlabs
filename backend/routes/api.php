@@ -53,7 +53,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/today-status', [CheckClockController::class, 'todayStatus']);
         
         // Admin only
-        Route::middleware('admin')->get('/attendance-summary', [CheckClockController::class, 'attendanceSummary']);
+        Route::middleware('admin')->group(function () {
+            Route::get('/attendance-summary', [CheckClockController::class, 'attendanceSummary']);
+            Route::post('/manual', [CheckClockController::class, 'manualCheckIn']);
+            Route::post('/{id}/approve', [CheckClockController::class, 'approve']);
+            Route::post('/{id}/decline', [CheckClockController::class, 'decline']);
+        });
     });
     
     // Check Clock Settings (Admin/SuperAdmin only)

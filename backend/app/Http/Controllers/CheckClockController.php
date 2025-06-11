@@ -20,15 +20,34 @@ class CheckClockController extends Controller
     {
         $user = $request->user();
         
-        $query = CheckClock::with('user.employee')
-            ->byUser($user->id_users);
+        // For admins, allow viewing all employees' records
+        if ($user->isAdmin() && $request->has('employee_id') && $request->employee_id) {
+            $query = CheckClock::with('user.employee')
+                ->byUser($request->employee_id);
+        } elseif ($user->isAdmin() && !$request->has('employee_id')) {
+            // Admin can see all employees if no specific employee_id is provided
+            $query = CheckClock::with('user.employee');
+        } else {
+            // Regular users can only see their own records
+            $query = CheckClock::with('user.employee')
+                ->byUser($user->id_users);
+        }
 
-        // Search filter
-        if ($request->has('search')) {
+        // Search filter - improved to search user names too
+        if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->whereDate('check_clock_time', 'like', "%{$search}%")
-                  ->orWhere('check_clock_type', 'like', "%{$search}%");
+                  ->orWhere('check_clock_type', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%")
+                  ->orWhereHas('user.employee', function($q) use ($search) {
+                      $q->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('user', function($q) use ($search) {
+                      $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                  });
             });
         }
 
@@ -38,33 +57,37 @@ class CheckClockController extends Controller
         } elseif ($request->has('date')) {
             $query->byDate($request->date);
         } else {
-            // Default to current month
+            // Default to current month for better performance
             $query->whereMonth('check_clock_time', now()->month)
                   ->whereYear('check_clock_time', now()->year);
         }
 
-        // Status filter
-        if ($request->has('status')) {
-            $status = $request->status;
-            if ($status !== 'All Status') {
-                // We'll filter this after getting the data since status is calculated
-                $query->whereHas('user.employee');
-            }
-        }
-
         // Type filter
-        if ($request->has('type')) {
+        if ($request->has('type') && !empty($request->type)) {
             $query->byType($request->type);
         }
 
+        // Sort by latest first
+        $query->orderBy('check_clock_time', 'desc');
+
         $perPage = $request->get('per_page', 15);
-        $checkClocks = $query->orderBy('check_clock_time', 'desc')->paginate($perPage);
+        $checkClocks = $query->paginate($perPage);
 
-        // Group by date and transform data
-        $groupedData = $this->groupByDateAndTransform($checkClocks->items(), $request->status ?? null);
+        // Group by date and transform data - different format for admins
+        if ($user->isAdmin() && !$request->has('employee_id')) {
+            // Admin needs detailed records grouped by date
+            $groupedData = $this->groupByDateForAdmin($checkClocks->items(), $request->status ?? null);
+        } else {
+            // Regular users get simplified daily summaries
+            $groupedData = $this->groupByDateAndTransform($checkClocks->items(), $request->status ?? null);
+        }
 
-        // Get today's status
-        $todayStatus = $this->getTodayStatus($user->id_users);
+        // Get today's status only for individual user requests
+        $todayStatus = null;
+        if (!$user->isAdmin() || ($request->has('employee_id') && $request->employee_id)) {
+            $statusUserId = $request->has('employee_id') ? $request->employee_id : $user->id_users;
+            $todayStatus = $this->getTodayStatus($statusUserId);
+        }
 
         return response()->json([
             'success' => true,
@@ -76,6 +99,9 @@ class CheckClockController extends Controller
                 'total' => $checkClocks->total(),
                 'from' => $checkClocks->firstItem(),
                 'to' => $checkClocks->lastItem(),
+                'has_more_pages' => $checkClocks->hasMorePages(),
+                'next_page_url' => $checkClocks->nextPageUrl(),
+                'prev_page_url' => $checkClocks->previousPageUrl(),
             ],
             'today_status' => $todayStatus,
             'filters_applied' => [
@@ -83,7 +109,8 @@ class CheckClockController extends Controller
                 'date_from' => $request->date_from,
                 'date_to' => $request->date_to,
                 'status' => $request->status,
-                'type' => $request->type
+                'type' => $request->type,
+                'employee_id' => $request->employee_id
             ]
         ], 200);
     }
@@ -478,6 +505,60 @@ class CheckClockController extends Controller
     }
 
     /**
+     * Group check clocks by date for admin view with detailed records
+     */
+    private function groupByDateForAdmin($checkClocks, $statusFilter = null): array
+    {
+        $grouped = collect($checkClocks)->groupBy(function ($item) {
+            return Carbon::parse($item->check_clock_time)->format('Y-m-d');
+        });
+
+        $result = [];
+        
+        foreach ($grouped as $date => $dayRecords) {
+            // Transform each record for the frontend
+            $transformedRecords = $dayRecords->map(function ($record) {
+                return [
+                    'id' => $record->id,
+                    'user_id' => $record->user_id,
+                    'check_clock_type' => $record->check_clock_type,
+                    'check_clock_time' => $record->check_clock_time->toISOString(),
+                    'latitude' => $record->latitude,
+                    'longitude' => $record->longitude,
+                    'address' => $record->address,
+                    'supporting_evidence' => $record->supporting_evidence ? Storage::url($record->supporting_evidence) : null,
+                    'approval_status' => $record->approval_status ?? 'pending',
+                    'approved_by' => $record->approved_by,
+                    'approved_at' => $record->approved_at ? $record->approved_at->toISOString() : null,
+                    'admin_notes' => $record->admin_notes,
+                    'is_manual_entry' => $record->is_manual_entry ?? false,
+                    'created_at' => $record->created_at->toISOString(),
+                    'updated_at' => $record->updated_at->toISOString(),
+                    'user' => [
+                        'id_users' => $record->user->id_users,
+                        'name' => $record->user->name,
+                        'email' => $record->user->email,
+                        'employee' => $record->user->employee ? [
+                            'id' => $record->user->employee->id,
+                            'first_name' => $record->user->employee->first_name,
+                            'last_name' => $record->user->employee->last_name,
+                            'position' => $record->user->employee->position ?? null,
+                        ] : null
+                    ]
+                ];
+            })->values()->toArray();
+
+            $result[] = [
+                'date' => Carbon::parse($date)->format('Y-m-d'),
+                'formatted_date' => Carbon::parse($date)->format('F d, Y'),
+                'records' => $transformedRecords
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
      * Get today's status for user
      */
     private function getTodayStatus(int $userId): array
@@ -534,6 +615,15 @@ class CheckClockController extends Controller
             'longitude' => $checkClock->longitude,
             'address' => $checkClock->address,
             'supporting_evidence' => $checkClock->supporting_evidence ? Storage::url($checkClock->supporting_evidence) : null,
+            'approval_status' => $checkClock->approval_status,
+            'approved_by' => $checkClock->approved_by,
+            'approved_at' => $checkClock->approved_at ? $checkClock->approved_at->format('Y-m-d H:i:s') : null,
+            'admin_notes' => $checkClock->admin_notes,
+            'is_manual_entry' => $checkClock->is_manual_entry,
+            'approver' => $checkClock->approver ? [
+                'id' => $checkClock->approver->id_users,
+                'name' => $checkClock->approver->name,
+            ] : null,
             'created_at' => $checkClock->created_at
         ];
     }
@@ -696,5 +786,195 @@ class CheckClockController extends Controller
                 'attendance_rate' => $totalDays > 0 ? round((($onTimeDays + $lateDays) / $totalDays) * 100, 2) : 0
             ]
         ];
+    }
+
+    /**
+     * Admin approve attendance record
+     */
+    public function approve(Request $request, int $id): JsonResponse
+    {
+        // Check if user is admin
+        if (!$request->user()->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only admin can approve attendance records'
+            ], 403);
+        }
+
+        $checkClock = CheckClock::find($id);
+
+        if (!$checkClock) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Attendance record not found'
+            ], 404);
+        }
+
+        if ($checkClock->approval_status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only pending attendance records can be approved'
+            ], 400);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'admin_notes' => 'nullable|string|max:1000'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $checkClock->update([
+                'approval_status' => 'approved',
+                'approved_by' => $request->user()->id_users,
+                'approved_at' => now(),
+                'admin_notes' => $request->admin_notes
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance record approved successfully',
+                'data' => $this->transformCheckClockData($checkClock->fresh(['user.employee', 'approver']))
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to approve attendance record',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Admin decline attendance record
+     */
+    public function decline(Request $request, int $id): JsonResponse
+    {
+        // Check if user is admin
+        if (!$request->user()->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only admin can decline attendance records'
+            ], 403);
+        }
+
+        $checkClock = CheckClock::find($id);
+
+        if (!$checkClock) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Attendance record not found'
+            ], 404);
+        }
+
+        if ($checkClock->approval_status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only pending attendance records can be declined'
+            ], 400);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'admin_notes' => 'required|string|max:1000'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $checkClock->update([
+                'approval_status' => 'declined',
+                'approved_by' => $request->user()->id_users,
+                'approved_at' => now(),
+                'admin_notes' => $request->admin_notes
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance record declined successfully',
+                'data' => $this->transformCheckClockData($checkClock->fresh(['user.employee', 'approver']))
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to decline attendance record',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Admin manual check-in for user
+     */
+    public function manualCheckIn(Request $request): JsonResponse
+    {
+        // Check if user is admin
+        if (!$request->user()->isAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only admin can manually check-in users'
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id_users',
+            'check_clock_type' => 'required|in:clock_in,clock_out,break_start,break_end',
+            'check_clock_time' => 'required|date',
+            'admin_notes' => 'nullable|string|max:1000',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
+            'address' => 'nullable|string|max:500'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            // Create manual check clock record
+            $checkClock = CheckClock::create([
+                'user_id' => $request->user_id,
+                'check_clock_type' => $request->check_clock_type,
+                'check_clock_time' => $request->check_clock_time,
+                'latitude' => $request->latitude ?? 0,
+                'longitude' => $request->longitude ?? 0,
+                'address' => $request->address ?? 'Manual entry by admin',
+                'approval_status' => 'approved', // Manual entries are auto-approved
+                'approved_by' => $request->user()->id_users,
+                'approved_at' => now(),
+                'admin_notes' => $request->admin_notes,
+                'is_manual_entry' => true
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Manual check-in recorded successfully',
+                'data' => $this->transformCheckClockData($checkClock->fresh(['user.employee', 'approver']))
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to record manual check-in',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

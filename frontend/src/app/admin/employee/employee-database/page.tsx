@@ -137,26 +137,35 @@ export default function EmployeeTable() {
             'Accept': 'application/json',
           },
         }
-      );
-
-      if (response.ok) {
+      );      if (response.ok) {
         const result: ApiResponse = await response.json();
-        const allEmployees = result.data.data;
+        const allEmployees = result?.data?.data;
         
-        // Extract unique values for filter options
-        const branches = [...new Set(allEmployees.map(emp => emp.branch))].filter(Boolean);
-        const positions = [...new Set(allEmployees.map(emp => emp.position))].filter(Boolean);
-        const grades = [...new Set(allEmployees.map(emp => emp.grade))].filter(Boolean);
+        // Check if allEmployees is a valid array before processing
+        if (Array.isArray(allEmployees) && allEmployees.length > 0) {
+          // Extract unique values for filter options
+          const branches = [...new Set(allEmployees.map(emp => emp.branch))].filter(Boolean);
+          const positions = [...new Set(allEmployees.map(emp => emp.position))].filter(Boolean);
+          const grades = [...new Set(allEmployees.map(emp => emp.grade))].filter(Boolean);
 
-        setFilterOptions(prev => ({
-          ...prev,
-          branches: branches.sort(),
-          positions: positions.sort(),
-          grades: grades.sort()
-        }));
-      }
-    } catch (error) {
+          setFilterOptions(prev => ({
+            ...prev,
+            branches: branches.sort(),
+            positions: positions.sort(),
+            grades: grades.sort()
+          }));
+        } else {
+          console.warn('No employee data found for filter options');
+        }
+      }    } catch (error) {
       console.error('Error fetching filter options:', error);
+      // Ensure filter options remain in a valid state even on error
+      setFilterOptions(prev => ({
+        ...prev,
+        branches: prev.branches || [],
+        positions: prev.positions || [],
+        grades: prev.grades || []
+      }));
     }
   };
   // Fetch employees data
@@ -194,19 +203,36 @@ export default function EmployeeTable() {
             'Accept': 'application/json',
           },
         }
-      );
-
-      if (response.ok) {
+      );      if (response.ok) {
         const result: ApiResponse = await response.json();
-        setEmployees(result.data.data);
-        setTotalEmployees(result.data.total);
-        setTotalPages(result.data.last_page);
-        setStats(result.stats);
+        
+        // Add safety checks for the API response structure
+        if (result?.data?.data && Array.isArray(result.data.data)) {
+          setEmployees(result.data.data);
+          setTotalEmployees(result.data.total || 0);
+          setTotalPages(result.data.last_page || 1);          setStats(result.stats || {
+            total_employees: 0,
+            active_employees: 0,
+            inactive_employees: 0,
+            men_count: 0,
+            women_count: 0,
+            permanent_count: 0,
+            contract_count: 0
+          });
+        } else {
+          console.warn('Invalid API response structure:', result);
+          setEmployees([]);
+          setTotalEmployees(0);
+          setTotalPages(1);
+        }
       } else {
         console.error('Failed to fetch employees');
-      }
-    } catch (error) {
+      }    } catch (error) {
       console.error('Error fetching employees:', error);
+      // Set safe defaults on error
+      setEmployees([]);
+      setTotalEmployees(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }

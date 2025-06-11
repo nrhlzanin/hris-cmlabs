@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import SignUpForm from "@/app/components/auth/signup/signupform";
+import SignUpForm from "@/app/components/auth/signup/SignUpForm";
 import AuthLayout from "@/app/components/auth/signup/AuthLayout";
 import SocialButton from "@/app/components/auth/signup/SocialButton";
 

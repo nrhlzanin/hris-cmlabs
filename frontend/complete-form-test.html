@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Employee Form Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .form-group { margin: 10px 0; }
+        input, select, textarea { padding: 8px; margin: 5px 0; width: 300px; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Complete Employee Form Database Connection Test</h1>
+    
+    <div class="test-section">
+        <h2>1. Server Status Check</h2>
+        <div id="server-status">Testing...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Authentication Test</h2>
+        <div class="form-group">
+            <input type="text" id="test-email" placeholder="Email" value="admin@test.com">
+            <input type="password" id="test-password" placeholder="Password" value="password">
+            <button onclick="testLogin()">Test Login</button>
+        </div>
+        <div id="auth-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Employee Form Test</h2>
+        <form id="employee-test-form">
+            <div class="form-group">
+                <input type="text" name="first_name" placeholder="First Name" value="John" required>
+                <input type="text" name="last_name" placeholder="Last Name" value="Doe" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="NIK" placeholder="NIK (16 digits)" value="1234567890123456" required>
+                <input type="tel" name="mobile_phone" placeholder="Mobile Phone" value="081234567890" required>
+            </div>
+            <div class="form-group">
+                <select name="gender" required>
+                    <option value="">Select Gender</option>
+                    <option value="male" selected>Male</option>
+                    <option value="female">Female</option>
+                </select>
+                <select name="education" required>
+                    <option value="">Select Education</option>
+                    <option value="bachelor" selected>Bachelor</option>
+                    <option value="master">Master</option>
+                    <option value="diploma">Diploma</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="date" name="birth_date" value="1990-01-01" required>
+                <input type="text" name="birth_place" placeholder="Birth Place" value="Jakarta" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="position" placeholder="Position" value="Developer" required>
+                <input type="text" name="branch" placeholder="Branch" value="Main Branch" required>
+            </div>
+            <div class="form-group">
+                <select name="contract_type" required>
+                    <option value="">Contract Type</option>
+                    <option value="permanent" selected>Permanent</option>
+                    <option value="contract">Contract</option>
+                    <option value="internship">Internship</option>
+                </select>
+                <input type="text" name="grade" placeholder="Grade" value="A" required>
+            </div>
+            <div class="form-group">
+                <input type="text" name="bank_name" placeholder="Bank Name" value="BCA" required>
+                <input type="text" name="account_number" placeholder="Account Number" value="1234567890" required>
+            </div>
+            <button type="submit">Test Employee Creation</button>
+        </form>
+        <div id="form-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Results Summary</h2>
+        <div id="summary-result"></div>
+    </div>
+
+    <script>
+        let authToken = null;
+        const API_BASE = 'http://localhost:8000/api';
+
+        // Test server status
+        async function checkServerStatus() {
+            try {
+                const response = await fetch('http://localhost:8000');
+                if (response.ok) {
+                    document.getElementById('server-status').innerHTML = '<span class="success">✅ Laravel server is running</span>';
+                    return true;
+                } else {
+                    document.getElementById('server-status').innerHTML = '<span class="error">❌ Laravel server returned error</span>';
+                    return false;
+                }
+            } catch (error) {
+                document.getElementById('server-status').innerHTML = '<span class="error">❌ Cannot connect to Laravel server</span>';
+                return false;
+            }
+        }
+
+        // Test login
+        async function testLogin() {
+            const email = document.getElementById('test-email').value;
+            const password = document.getElementById('test-password').value;
+            const resultDiv = document.getElementById('auth-result');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.token) {
+                    authToken = data.token;
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ Authentication successful<br>
+                            Token: ${data.token.substring(0, 20)}...<br>
+                            User: ${data.user?.email || 'Unknown'}
+                        </div>
+                    `;
+                    return true;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            ❌ Authentication failed<br>
+                            ${data.message || 'Unknown error'}
+                        </div>
+                    `;
+                    return false;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Authentication error: ${error.message}
+                    </div>
+                `;
+                return false;
+            }
+        }
+
+        // Test employee form submission
+        document.getElementById('employee-test-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!authToken) {
+                document.getElementById('form-result').innerHTML = '<div class="result error">❌ Please login first</div>';
+                return;
+            }
+
+            const formData = new FormData(this);
+            const resultDiv = document.getElementById('form-result');
+
+            try {
+                const response = await fetch(`${API_BASE}/employees`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            ✅ Employee created successfully!<br>
+                            Employee ID: ${data.employee?.NIK || data.NIK}<br>
+                            Name: ${data.employee?.first_name || data.first_name} ${data.employee?.last_name || data.last_name}<br>
+                            Database Connection: Working ✅
+                        </div>
+                    `;
+                    updateSummary(true);
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            ❌ Employee creation failed<br>
+                            ${data.message || 'Unknown error'}<br>
+                            Errors: ${JSON.stringify(data.errors || {})}
+                        </div>
+                    `;
+                    updateSummary(false);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        ❌ Form submission error: ${error.message}
+                    </div>
+                `;
+                updateSummary(false);
+            }
+        });
+
+        function updateSummary(formSuccess) {
+            const summaryDiv = document.getElementById('summary-result');
+            summaryDiv.innerHTML = `
+                <div class="result ${formSuccess ? 'success' : 'error'}">
+                    <h3>📋 Connection Test Summary</h3>
+                    <p><strong>Backend Server:</strong> ✅ Running on port 8000</p>
+                    <p><strong>Authentication:</strong> ${authToken ? '✅ Working' : '❌ Failed'}</p>
+                    <p><strong>Employee Form:</strong> ${formSuccess ? '✅ Connected to Database' : '❌ Database Connection Issue'}</p>
+                    <p><strong>Overall Status:</strong> ${formSuccess ? '✅ Form-to-Database connection is WORKING!' : '❌ Issues detected'}</p>
+                </div>
+            `;
+        }
+
+        // Auto-run server check on page load
+        window.onload = function() {
+            checkServerStatus();
+        };
+    </script>
+</body>
+</html>

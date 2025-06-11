@@ -33,7 +33,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Admin navigation items
   const adminNavItems = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
-    { name: 'Employees', href: '/admin/employees', icon: UserGroupIcon },
+    { name: 'Employees', href: '/admin/employee/employee-database', icon: UserGroupIcon },
     { name: 'Check Clock', href: '/admin/checklock', icon: ClockIcon },
     { name: 'Letters', href: '/admin/letter', icon: DocumentTextIcon },
     { name: 'Overtime', href: '/admin/overtime', icon: ChartBarIcon },

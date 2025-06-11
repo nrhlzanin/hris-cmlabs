@@ -67,17 +67,15 @@ class EmployeeController extends Controller
             'success' => true,
             'message' => 'Employees retrieved successfully',
             'data' => [
-                'employees' => $employees->items(),
-                'pagination' => [
-                    'current_page' => $employees->currentPage(),
-                    'last_page' => $employees->lastPage(),
-                    'per_page' => $employees->perPage(),
-                    'total' => $employees->total(),
-                    'from' => $employees->firstItem(),
-                    'to' => $employees->lastItem(),
-                ],
-                'statistics' => $stats
-            ]
+                'data' => $employees->items(),
+                'current_page' => $employees->currentPage(),
+                'last_page' => $employees->lastPage(),
+                'per_page' => $employees->perPage(),
+                'total' => $employees->total(),
+                'from' => $employees->firstItem(),
+                'to' => $employees->lastItem(),
+            ],
+            'stats' => $stats
         ], 200);
     }
 
@@ -459,17 +457,20 @@ class EmployeeController extends Controller
      */
     private function getEmployeeStats(): array
     {
+        $totalEmployees = Employee::count();
+        $menCount = Employee::where('gender', 'Men')->count();
+        $womenCount = Employee::where('gender', 'Woman')->count();
+        $permanentCount = Employee::where('contract_type', 'Permanent')->count();
+        $contractCount = Employee::where('contract_type', 'Contract')->count();
+        
         return [
-            'total_employees' => Employee::count(),
-            'total_new_hire' => Employee::whereMonth('created_at', now()->month)
-                                     ->whereYear('created_at', now()->year)
-                                     ->count(),
-            'full_time_employees' => Employee::where('contract_type', 'Permanent')->count(),
-            'contract_employees' => Employee::where('contract_type', 'Contract')->count(),
-            'by_gender' => [
-                'men' => Employee::where('gender', 'Men')->count(),
-                'women' => Employee::where('gender', 'Woman')->count(),
-            ],
+            'total_employees' => $totalEmployees,
+            'active_employees' => $totalEmployees, // Assuming all employees are active for now
+            'inactive_employees' => 0, // Placeholder for inactive employees
+            'men_count' => $menCount,
+            'women_count' => $womenCount,
+            'permanent_count' => $permanentCount,
+            'contract_count' => $contractCount,
             'by_branch' => Employee::select('branch')
                                  ->selectRaw('count(*) as total')
                                  ->groupBy('branch')
