@@ -1,29 +1,9 @@
 ﻿"use client";
 
-<<<<<<< HEAD
 import { BarChart, Calendar, CheckCircle, Clock, Users, FileText, TrendingUp, AlertCircle } from "lucide-react";
 import { useJakartaTime, useWorkingHours } from '@/hooks/use-timezone';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
-=======
-import {
-  BarChart,
-  Calendar,
-  CheckCircle,
-  Clock,
-  Users,
-  FileText,
-  TrendingUp,
-  AlertCircle,
-} from "lucide-react";
-
-import { useJakartaTime, useWorkingHours } from "@/hooks/use-timezone";
-import StatCardDashboard from "@/app/components/admin/dashboard/card";
-import EmployeeBarChart from "@/app/components/admin/dashboard/chart";
-import AttendancePieChart from "@/app/components/admin/dashboard/pie";
-import EmployeeStatusChart from "@/app/components/admin/dashboard/statistic";
-import EmployeeStatusCard from "@/app/components/admin/dashboard/status";
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
 
 export default function DashboardPage() {
   const jakartaTime = useJakartaTime();
@@ -71,7 +51,6 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-<<<<<<< HEAD
         {/* Recent Activity */}
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-6 border-b">
@@ -184,10 +163,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-=======
-        <AttendancePieChart />
-        <EmployeeStatusCard />
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
       </div>
     </div>
       </DashboardLayout>

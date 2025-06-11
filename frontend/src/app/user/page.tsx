@@ -1,6 +1,5 @@
 'use client';
 
-<<<<<<< HEAD
 import { CheckCircle, Clock, FileText, Calendar, MapPin, Coffee, Star, TrendingUp } from "lucide-react";
 import { useJakartaTime, useWorkingHours } from '@/hooks/use-timezone';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -258,30 +257,6 @@ export default function UserDashboardPage() {
               </div>
             </div>
           </div>        </div>
-=======
-import React from 'react';
-import { formatJakartaDate } from '@/lib/timezone';
-import ProfileHeader from '@/app/components/User/profile/profilecard';
-import SalaryDetail from '@/app/components/User/profile/salarydetail';
-import WorkHours from '@/app/components/User/profile/workhours';
-
-export default function ProfilePage() {
-  const startDate = formatJakartaDate(new Date('2045-12-30'), {
-    year: 'numeric', month: 'short', day: 'numeric'
-  });
-  const lastUpdate = formatJakartaDate(new Date(Date.now() - 86400000), {
-    year: 'numeric', month: 'short', day: 'numeric'
-  });
-
-  return (
-    <div className="bg-gray-100 min-h-screen py-10">
-      <div className="p-6 max-w-5xl mx-auto font-sans space-y-6">
-        <ProfileHeader name="Anindya Nurhaliza Putri" lastUpdate={lastUpdate} startDate={startDate} />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SalaryDetail />
-          <WorkHours />
-        </div>
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
       </div>
     </div>
       </DashboardLayout>

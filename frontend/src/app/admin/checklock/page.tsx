@@ -90,18 +90,11 @@ export default function AttendanceOverview() {
 
   const selectedData = attendanceList.find((item) => item.id === selectedId);
   return (
-<<<<<<< HEAD
     <AuthWrapper requireAdmin={true}>
       <DashboardLayout>
         <div className="min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8 w-full">
       <div className="w-full max-w-7xl mx-auto bg-white rounded shadow p-6">
         <div className="flex justify-between items-center mb-4">
-=======
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8 w-full">
-      <div className="max-w-7xl mx-auto bg-white rounded shadow p-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
           <h2 className="text-2xl font-semibold">Attendance Overview</h2>
           <div className="text-sm text-gray-600 text-right">
             <p>

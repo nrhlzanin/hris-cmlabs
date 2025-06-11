@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-<<<<<<< HEAD
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -13,16 +12,10 @@ import { overtimeService, type OvertimeRecord } from '@/services/overtime';
 import { formatJakartaDate, formatJakartaTime } from '@/lib/timezone';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
-=======
-import { Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { overtimeService, type OvertimeRecord } from '@/services/overtime';
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
 
 export default function AdminOvertimePage() {
   const [records, setRecords] = useState<OvertimeRecord[]>([]);
   const [loading, setLoading] = useState(true);
-<<<<<<< HEAD
   const [selectedRecord, setSelectedRecord] = useState<OvertimeRecord | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [approvalModalOpen, setApprovalModalOpen] = useState(false);
@@ -32,18 +25,12 @@ export default function AdminOvertimePage() {
     date_from: '',
     date_to: ''
   });
-=======
-  const [selected, setSelected] = useState<OvertimeRecord | null>(null);
-  const [isDetailOpen, setDetailOpen] = useState(false);
-  const [isApproveOpen, setApproveOpen] = useState(false);
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-<<<<<<< HEAD
       setLoading(true);
       const response = await overtimeService.getOvertimeRecords({
         search: filters.search || undefined,
@@ -58,12 +45,6 @@ export default function AdminOvertimePage() {
         title: 'Error',
         description: 'Failed to load overtime records',
       });
-=======
-      const res = await overtimeService.getOvertimeRecords({ per_page: 50 });
-      setRecords(res.data);
-    } catch {
-      toast({ title: 'Error', description: 'Failed to load records' });
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
     } finally {
       setLoading(false);
     }
@@ -71,7 +52,6 @@ export default function AdminOvertimePage() {
 
   useEffect(() => { load(); }, [load]);
 
-<<<<<<< HEAD
   const handleViewDetail = (record: OvertimeRecord) => {
     setSelectedRecord(record);
     setDetailModalOpen(true);
@@ -80,11 +60,6 @@ export default function AdminOvertimePage() {
   const handleApprovalAction = (record: OvertimeRecord) => {
     setSelectedRecord(record);
     setApprovalModalOpen(true);
-=======
-  const openDetail = (rec: OvertimeRecord) => {
-    setSelected(rec);
-    setDetailOpen(true);
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
   };
 
   const openApprove = (rec: OvertimeRecord) => {
@@ -96,7 +71,6 @@ export default function AdminOvertimePage() {
     if (!selected) return;
     setSubmitting(true);
     try {
-<<<<<<< HEAD
       setSubmitting(true);
       await overtimeService.updateOvertimeStatus(selectedRecord.id, {
         status,
@@ -114,14 +88,6 @@ export default function AdminOvertimePage() {
         title: 'Error',
         description: `Failed to ${status === 'approved' ? 'approve' : 'reject'} overtime request`,
       });
-=======
-      await overtimeService.updateOvertimeStatus(selected.id, { status, admin_remarks: '' });
-      toast({ title: 'Success', description: `Request ${status}` });
-      setApproveOpen(false);
-      load();
-    } catch {
-      toast({ title: 'Error', description: `Failed to ${status}` });
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
     } finally {
       setSubmitting(false);
     }
@@ -136,7 +102,6 @@ export default function AdminOvertimePage() {
     }
   };
 
-<<<<<<< HEAD
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'approved':
@@ -180,8 +145,6 @@ export default function AdminOvertimePage() {
     );
   });
 
-=======
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -191,7 +154,6 @@ export default function AdminOvertimePage() {
     );
   }
   return (
-<<<<<<< HEAD
     <AuthWrapper requireAdmin={true}>
       <DashboardLayout>
         <div className="min-h-screen bg-gray-100 py-6 px-4">
@@ -479,56 +441,6 @@ export default function AdminOvertimePage() {
                   </p>
                 </div>
               )}
-=======
-    <div className="p-6 max-w-4xl mx-auto space-y-4">
-      <h1 className="text-2xl font-bold">Overtime Overview</h1>
-      <ul className="space-y-2">
-        {records.map(rec => (
-          <li key={rec.id} className="border p-4 rounded flex justify-between items-center">
-            <div>
-              <p className="font-semibold">{rec.employee.name}</p>
-              <p className="text-sm text-gray-600">{rec.date}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {renderIcon(rec.status)}
-              <Button size="sm" onClick={() => openDetail(rec)}>Detail</Button>
-              <Button size="sm" variant="secondary" disabled={rec.status !== 'pending'} onClick={() => openApprove(rec)}>
-                Approve
-              </Button>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      {/* Approve Modal */}
-      <Dialog open={isApproveOpen} onOpenChange={setApproveOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Approve or Reject</DialogTitle>
-          </DialogHeader>
-          {selected && (
-            <div className="space-y-4">
-              <p><strong>Employee:</strong> {selected.employee.name}</p>
-              <p><strong>Date:</strong> {selected.date}</p>
-              <div className="flex gap-4">
-                <Button
-                  onClick={() => submitApproval('approved')}
-                  disabled={submitting}
-                  className="bg-green-600 hover:bg-green-700 flex-1"
-                >
-                  {submitting ? <Clock className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />} Approve
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => submitApproval('rejected')}
-                  disabled={submitting}
-                  className="flex-1"
-                >
-                  {submitting ? <Clock className="h-4 w-4 animate-spin mr-2" /> : <XCircle className="h-4 w-4 mr-2" />} Reject
-                </Button>
-              </div>
-              <Button variant="outline" onClick={() => setApproveOpen(false)}>Cancel</Button>
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
             </div>
           )}
         </DialogContent>
@@ -540,7 +452,6 @@ export default function AdminOvertimePage() {
           <DialogHeader>
             <DialogTitle>Record Detail</DialogTitle>
           </DialogHeader>
-<<<<<<< HEAD
           {selectedRecord && (
             <div className="space-y-4">              <div className="text-sm">
                 <p><strong>Employee:</strong> {selectedRecord.employee?.name}</p>
@@ -588,19 +499,5 @@ export default function AdminOvertimePage() {
       </Dialog>
       </DashboardLayout>
     </AuthWrapper>
-=======
-          {selected && (
-            <div className="space-y-2">
-              <p><strong>Employee:</strong> {selected.employee.name}</p>
-              <p><strong>Date:</strong> {selected.date}</p>
-              <p><strong>Start Time:</strong> {formatJakartaTime(new Date(`1970-01-01T${selected.start_time}`))}</p>
-              <p><strong>End Time:</strong> {selected.end_time ? formatJakartaTime(new Date(`1970-01-01T${selected.end_time}`)) : 'N/A'}</p>
-              <p><strong>Reason:</strong> {selected.reason || '-'}</p>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
->>>>>>> b34488116d69d94048fe117e0f0b84b5481c3319
   );
 }
