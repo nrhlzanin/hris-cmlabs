@@ -8,6 +8,8 @@ import { SessionProvider } from "@/providers/SessionProvider";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: 'swap',
+  fallback: ['system-ui', 'arial']
 });
 
 export const metadata: Metadata = {
@@ -23,6 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Font Awesome from CDN - only if network available */}
         <link
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
           rel="stylesheet"
