@@ -735,4 +735,88 @@ class EmployeeController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Bulk delete employees
+     */
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        // Check if user is super admin
+        if (!$request->user()->isSuperAdmin()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only super admin can bulk delete employees'
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'niks' => 'required|array|min:1',
+            'niks.*' => 'required|string|size:16|exists:employees,nik',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $niks = $request->niks;
+            $deletedCount = 0;
+            $failedCount = 0;
+            $errors = [];
+
+            DB::beginTransaction();
+
+            foreach ($niks as $nik) {
+                try {
+                    $employee = Employee::where('nik', $nik)->first();
+                    
+                    if ($employee) {
+                        // Delete avatar if exists
+                        if ($employee->avatar) {
+                            Storage::disk('public')->delete($employee->avatar);
+                        }
+                        
+                        $employee->delete();
+                        $deletedCount++;
+                    } else {
+                        $failedCount++;
+                        $errors[] = "Employee with NIK {$nik} not found";
+                    }
+                } catch (\Exception $e) {
+                    $failedCount++;
+                    $errors[] = "Failed to delete employee with NIK {$nik}: " . $e->getMessage();
+                }
+            }
+
+            DB::commit();
+
+            $response = [
+                'success' => true,
+                'message' => "Bulk delete completed. {$deletedCount} employees deleted successfully.",
+                'data' => [
+                    'deleted' => $deletedCount,
+                    'failed' => $failedCount,
+                    'total_processed' => count($niks)
+                ]
+            ];
+
+            if (!empty($errors)) {
+                $response['errors'] = $errors;
+            }
+
+            return response()->json($response, 200);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to bulk delete employees',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

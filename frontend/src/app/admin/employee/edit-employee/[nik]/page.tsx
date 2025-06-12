@@ -1,16 +1,21 @@
-﻿'use client';
-import { useState } from 'react';
+'use client';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import AuthWrapper from '@/components/auth/AuthWrapper';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { employeeService, EmployeeCreateData } from '@/services/employee';
+import AuthWrapper from '@/components/auth/AuthWrapper';
+import { employeeService, Employee, EmployeeUpdateData } from '@/services/employee';
+
+interface EmployeeEditPageProps {
+  params: {
+    nik: string;
+  };
+}
 
 interface FormData {
   first_name: string;
   last_name: string;
   mobile_phone: string;
-  nik: string;
   gender: string;
   last_education: string;
   place_of_birth: string;
@@ -25,13 +30,19 @@ interface FormData {
   letter_id: string;
 }
 
-export default function AddEmployeeForm() {
+export default function EditEmployeePage({ params }: EmployeeEditPageProps) {
   const router = useRouter();
+  const [employee, setEmployee] = useState<Employee | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [avatar, setAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState<FormData>({
     first_name: '',
     last_name: '',
     mobile_phone: '',
-    nik: '',
     gender: '',
     last_education: '',
     place_of_birth: '',
@@ -46,11 +57,6 @@ export default function AddEmployeeForm() {
     letter_id: ''
   });
 
-  const [avatar, setAvatar] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
-
   // Options sesuai dengan database enum
   const options = {
     genders: ['Men', 'Woman'],
@@ -59,18 +65,55 @@ export default function AddEmployeeForm() {
     banks: ['BCA', 'BNI', 'BRI', 'BSI', 'BTN', 'CMIB', 'Mandiri', 'Permata']
   };
 
+  useEffect(() => {
+    fetchEmployee();
+  }, [params.nik]);
+
+  const fetchEmployee = async () => {
+    try {
+      setLoading(true);
+      const response = await employeeService.getEmployee(params.nik);
+      
+      if (response.success) {
+        const emp = response.data;
+        setEmployee(emp);
+        setAvatarPreview(emp.avatar_url);
+        
+        // Populate form with existing data
+        setFormData({
+          first_name: emp.first_name,
+          last_name: emp.last_name,
+          mobile_phone: emp.mobile_phone,
+          gender: emp.gender,
+          last_education: emp.last_education,
+          place_of_birth: emp.place_of_birth,
+          date_of_birth: emp.date_of_birth,
+          position: emp.position,
+          branch: emp.branch,
+          contract_type: emp.contract_type,
+          grade: emp.grade,
+          bank: emp.bank,
+          account_number: emp.account_number,
+          acc_holder_name: emp.acc_holder_name,
+          letter_id: emp.letter_id?.toString() || ''
+        });
+      } else {
+        alert('Employee not found');
+        router.push('/admin/employee/employee-database');
+      }
+    } catch (error) {
+      console.error('Error fetching employee:', error);
+      alert('Failed to fetch employee data');
+      router.push('/admin/employee/employee-database');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-
-    // Special handling for NIK - only allow numbers and max 16 digits
-    if (name === 'nik') {
-      const numericValue = value.replace(/\D/g, ''); // Remove non-digits
-      if (numericValue.length <= 16) {
-        setFormData((prev) => ({ ...prev, [name]: numericValue }));
-      }
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    
     // Clear error for this field
     if (errors[name]) {
       setErrors((prev: Record<string, string[]>) => ({ ...prev, [name]: [] }));
@@ -88,49 +131,99 @@ export default function AddEmployeeForm() {
       reader.readAsDataURL(file);
     }
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsSubmitting(true);
     setErrors({});
 
-    // Validate NIK length
-    if (formData.nik.length !== 16) {
-      setErrors({ nik: ['NIK must be exactly 16 digits'] });
-      setIsLoading(false);
-      return;
-    }    try {
-      const employeeData: EmployeeCreateData = {
-        ...formData,
-        letter_id: formData.letter_id || undefined,
-        avatar: avatar || undefined
-      };
+    try {
+      const updateData: EmployeeUpdateData = {};
+      
+      // Only include changed fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value && value.trim() !== '') {
+          updateData[key as keyof EmployeeUpdateData] = value;
+        }
+      });
 
-      const response = await employeeService.createEmployee(employeeData);
+      // Add avatar if changed
+      if (avatar) {
+        updateData.avatar = avatar;
+      }
+
+      const response = await employeeService.updateEmployee(params.nik, updateData);
 
       if (response.success) {
-        alert('Employee created successfully!');
-        router.push('/admin/employee/employee-database');
+        alert('Employee updated successfully!');
+        router.push(`/admin/employee/employee-detail/${params.nik}`);
       } else {
-        if (response.errors) {
-          setErrors(response.errors);
+        if (response.data && typeof response.data === 'object' && 'errors' in response.data) {
+          setErrors(response.data.errors as Record<string, string[]>);
         } else {
-          alert(response.message || 'Failed to create employee');
+          alert(response.message || 'Failed to update employee');
         }
       }
     } catch (error) {
-      console.error('Error creating employee:', error);
-      alert('Failed to create employee. Please check your connection and try again.');
+      console.error('Error updating employee:', error);
+      alert('Failed to update employee. Please check your connection and try again.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <AuthWrapper requireAdmin={true}>
+        <DashboardLayout>
+          <div className="min-h-screen bg-gray-100 py-10 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading employee data...</p>
+            </div>
+          </div>
+        </DashboardLayout>
+      </AuthWrapper>
+    );
+  }
+
+  if (!employee) {
+    return (
+      <AuthWrapper requireAdmin={true}>
+        <DashboardLayout>
+          <div className="min-h-screen bg-gray-100 py-10">
+            <div className="max-w-4xl mx-auto px-6">
+              <div className="bg-white rounded-lg shadow p-6 text-center">
+                <h1 className="text-2xl font-bold text-gray-800 mb-4">Employee Not Found</h1>
+                <Link href="/admin/employee/employee-database">
+                  <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded">
+                    ← Back to Employee List
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </DashboardLayout>
+      </AuthWrapper>
+    );
+  }
 
   return (
     <AuthWrapper requireAdmin={true}>
       <DashboardLayout>
         <div className="min-h-screen bg-gray-200 flex items-center justify-center px-4">
           <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-6xl">
-            <h2 className="text-lg font-semibold mb-6">Add New Employee</h2>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-lg font-semibold">Edit Employee</h2>
+                <p className="text-gray-600 text-sm">Update information for {employee.full_name}</p>
+              </div>
+              <Link href={`/admin/employee/employee-detail/${params.nik}`}>
+                <button className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+                  ← Back to Details
+                </button>
+              </Link>
+            </div>
 
             {/* Upload Foto */}
             <div className="flex items-center gap-4 mb-6">
@@ -138,11 +231,13 @@ export default function AddEmployeeForm() {
                 {avatarPreview ? (
                   <img src={avatarPreview} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-slate-700" />
+                  <div className="w-full h-full bg-slate-700 flex items-center justify-center text-white">
+                    {employee.first_name.charAt(0)}{employee.last_name.charAt(0)}
+                  </div>
                 )}
               </div>
               <label className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-sm cursor-pointer">
-                + Upload Foto
+                + Change Photo
                 <input
                   type="file"
                   accept="image/jpeg,image/png,image/jpg"
@@ -150,6 +245,7 @@ export default function AddEmployeeForm() {
                   className="hidden"
                 />
               </label>
+              <p className="text-sm text-gray-500">JPG, PNG (Max: 2MB)</p>
             </div>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-6">
@@ -243,27 +339,19 @@ export default function AddEmployeeForm() {
                   error={errors.last_name}
                   required
                 />
-                {/* NIK Field with special handling */}
+                
+                {/* NIK Field - Read Only */}
                 <div>
                   <label className="block font-medium mb-1">
-                    NIK <span className="text-red-500">*</span>
+                    NIK <span className="text-gray-500">(Cannot be changed)</span>
                   </label>
                   <input
-                    name="nik"
-                    value={formData.nik}
-                    onChange={handleChange}
-                    placeholder="Enter 16-digit NIK"
-                    className={`w-full border px-3 py-2 rounded ${errors.nik ? 'border-red-500' : ''}`}
-                    maxLength={16}
-                    pattern="[0-9]{16}"
-                    title="NIK must be exactly 16 digits"
-                    required
+                    value={employee.nik}
+                    readOnly
+                    className="w-full border px-3 py-2 rounded bg-gray-100 text-gray-500 cursor-not-allowed"
                   />
-                  <div className="text-sm text-gray-500 mt-1">
-                    {formData.nik.length}/16 digits
-                  </div>
-                  {errors.nik && <p className="text-red-500 text-sm mt-1">{Array.isArray(errors.nik) ? errors.nik[0] : errors.nik}</p>}
                 </div>
+
                 <SelectField
                   label="Last Education"
                   name="last_education"
@@ -274,6 +362,7 @@ export default function AddEmployeeForm() {
                   error={errors.last_education}
                   required
                 />
+                
                 <div>
                   <label className="block font-medium mb-1">
                     Date of Birth <span className="text-red-500">*</span>
@@ -288,6 +377,7 @@ export default function AddEmployeeForm() {
                   />
                   {errors.date_of_birth && <p className="text-red-500 text-sm mt-1">{Array.isArray(errors.date_of_birth) ? errors.date_of_birth[0] : errors.date_of_birth}</p>}
                 </div>
+
                 <Field
                   label="Branch"
                   name="branch"
@@ -297,6 +387,7 @@ export default function AddEmployeeForm() {
                   error={errors.branch}
                   required
                 />
+                
                 <Field
                   label="Grade"
                   name="grade"
@@ -306,6 +397,7 @@ export default function AddEmployeeForm() {
                   error={errors.grade}
                   required
                 />
+                
                 <Field
                   label="Account Number"
                   name="account_number"
@@ -315,6 +407,7 @@ export default function AddEmployeeForm() {
                   error={errors.account_number}
                   required
                 />
+                
                 <Field
                   label="Letter ID (Optional)"
                   name="letter_id"
@@ -327,11 +420,11 @@ export default function AddEmployeeForm() {
 
               {/* Tombol */}
               <div className="col-span-2 flex justify-end space-x-3 pt-2">
-                <Link href="/admin/employee/employee-database">
+                <Link href={`/admin/employee/employee-detail/${params.nik}`}>
                   <button
                     type="button"
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                    disabled={isLoading}
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </button>
@@ -339,9 +432,9 @@ export default function AddEmployeeForm() {
                 <button
                   type="submit"
                   className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded disabled:opacity-50"
-                  disabled={isLoading}
+                  disabled={isSubmitting}
                 >
-                  {isLoading ? 'Saving...' : 'Save'}
+                  {isSubmitting ? 'Updating...' : 'Update Employee'}
                 </button>
               </div>
             </form>

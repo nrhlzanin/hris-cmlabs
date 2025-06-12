@@ -276,12 +276,13 @@ class AttendanceService {
         
         const clockInRecord = userRecords.find((r: CheckClockRecord) => r.check_clock_type === 'clock_in');
         const clockOutRecord = userRecords.find((r: CheckClockRecord) => r.check_clock_type === 'clock_out');
-        
-        const clockIn = clockInRecord ? this.formatTime(clockInRecord.check_clock_time) : '-';
+          const clockIn = clockInRecord ? this.formatTime(clockInRecord.check_clock_time) : '-';
         const clockOut = clockOutRecord ? this.formatTime(clockOutRecord.check_clock_time) : '-';
         const workHours = this.calculateWorkHours(clockInRecord?.check_clock_time, clockOutRecord?.check_clock_time);
-          // Generate unique ID for frontend
-        const recordId = parseInt(`${user.id_users}${date.replace(/-/g, '')}`);
+        
+        // Use the actual CheckClock record ID for approval/decline operations
+        // Prefer clock_in record ID, fallback to first available record ID
+        const recordId = clockInRecord?.id || userRecords[0]?.id;
         
         // Determine approval status from records (assuming it's on the individual records)
         const firstRecord = userRecords[0];

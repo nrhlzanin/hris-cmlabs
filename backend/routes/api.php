@@ -50,6 +50,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/employees/{nik}/avatar', [EmployeeController::class, 'uploadAvatar']);
         Route::get('/employees-export', [EmployeeController::class, 'export']);
         Route::post('employees/import', [EmployeeController::class, 'import']);
+        Route::post('employees/bulk-delete', [EmployeeController::class, 'bulkDelete']);
         Route::get('employees/template/download', [EmployeeController::class, 'downloadTemplate']);
     });
     
@@ -65,6 +66,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // Admin only
         Route::middleware('admin')->group(function () {
             Route::get('/attendance-summary', [CheckClockController::class, 'attendanceSummary']);
+            Route::get('/dashboard-attendance-summary', [CheckClockController::class, 'dashboardAttendanceSummary']);
+            Route::get('/recent-activities', [CheckClockController::class, 'recentActivities']);
+            Route::get('/all-employees-today-status', [CheckClockController::class, 'allEmployeesTodayStatus']);
+            Route::get('/weekly-attendance', [CheckClockController::class, 'weeklyAttendance']);
             Route::post('/manual', [CheckClockController::class, 'manualCheckIn']);
             Route::post('/{id}/approve', [CheckClockController::class, 'approve']);
             Route::post('/{id}/decline', [CheckClockController::class, 'decline']);

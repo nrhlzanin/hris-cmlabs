@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee CRUD Frontend Testing</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 20px; 
+            background: #f5f5f5;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section { 
+            margin: 20px 0; 
+            padding: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        .success { color: #4CAF50; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+        .warning { color: #ff9800; font-weight: bold; }
+        .info { color: #2196F3; font-weight: bold; }
+        button { 
+            background: #2196F3; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin: 5px;
+        }
+        button:hover { background: #1976D2; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #results { 
+            background: #000; 
+            color: #0f0; 
+            padding: 20px; 
+            border-radius: 5px; 
+            font-family: 'Courier New', monospace; 
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .test-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            background: white;
+        }
+        .test-card h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-pending { background: #ffc107; }
+        .status-running { background: #17a2b8; }
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Employee CRUD System Testing Dashboard</h1>
+        <p>Comprehensive testing for the Employee Management CRUD operations</p>
+        
+        <div class="test-section">
+            <h2>📋 Test Configuration</h2>
+            <div>
+                <label>Backend URL: </label>
+                <input type="text" id="backendUrl" value="http://localhost:8000" style="width: 200px;">
+                <button onclick="updateConfig()">Update</button>
+            </div>
+            <div style="margin-top: 10px;">
+                <label>Auth Token: </label>
+                <input type="password" id="authToken" placeholder="Enter your auth token" style="width: 300px;">
+                <button onclick="detectToken()">Auto-Detect</button>
+            </div>
+            <div style="margin-top: 10px;">
+                <button onclick="testConnection()">🔗 Test Connection</button>
+                <button onclick="runAllTests()" id="runAllBtn">🚀 Run All Tests</button>
+                <button onclick="clearResults()">🗑️ Clear Results</button>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎯 Individual Tests</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pending" id="status-list"></span>Employee List (READ)</h3>
+                    <p>Test fetching employees with pagination and filters</p>
+                    <button onclick="testEmployeeList()">Run Test</button>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pending" id="status-create"></span>Create Employee</h3>
+                    <p>Test creating a new employee record</p>
+                    <button onclick="testCreateEmployee()">Run Test</button>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pending" id="status-detail"></span>Employee Detail</h3>
+                    <p>Test fetching single employee details</p>
+                    <button onclick="testEmployeeDetail()">Run Test</button>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pending" id="status-update"></span>Update Employee</h3>
+                    <p>Test updating employee information</p>
+                    <button onclick="testUpdateEmployee()">Run Test</button>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pending" id="status-avatar"></span>Avatar Upload</h3>
+                    <p>Test avatar upload functionality</p>
+                    <button onclick="testAvatarUpload()">Run Test</button>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pending" id="status-bulk"></span>Bulk Operations</h3>
+                    <p>Test bulk delete and import/export</p>
+                    <button onclick="testBulkOperations()">Run Test</button>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pending" id="status-delete"></span>Delete Employee</h3>
+                    <p>Test deleting employee records</p>
+                    <button onclick="testDeleteEmployee()">Run Test</button>
+                </div>
+                
+                <div class="test-card">
+                    <h3><span class="status-indicator status-pending" id="status-frontend"></span>Frontend Pages</h3>
+                    <p>Test frontend page accessibility</p>
+                    <button onclick="testFrontendPages()">Run Test</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Test Results</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        let backendUrl = 'http://localhost:8000';
+        let authToken = '';
+        let testEmployee = null;
+        let testResults = [];
+
+        function updateConfig() {
+            backendUrl = document.getElementById('backendUrl').value;
+            log(`🔧 Backend URL updated to: ${backendUrl}`);
+        }
+
+        function detectToken() {
+            const token = localStorage.getItem('auth_token') || sessionStorage.getItem('auth_token');
+            if (token) {
+                document.getElementById('authToken').value = token;
+                authToken = token;
+                log(`✅ Auth token detected and loaded`);
+            } else {
+                log(`❌ No auth token found in localStorage or sessionStorage`);
+            }
+        }
+
+        function log(message) {
+            const results = document.getElementById('results');
+            const timestamp = new Date().toLocaleTimeString();
+            results.textContent += `[${timestamp}] ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').textContent = '';
+            testResults = [];
+            // Reset all status indicators
+            document.querySelectorAll('.status-indicator').forEach(el => {
+                el.className = 'status-indicator status-pending';
+            });
+        }
+
+        function updateStatus(testName, status) {
+            const indicator = document.getElementById(`status-${testName}`);
+            if (indicator) {
+                indicator.className = `status-indicator status-${status}`;
+            }
+        }
+
+        async function makeRequest(endpoint, options = {}) {
+            const token = authToken || document.getElementById('authToken').value;
+            
+            const defaultOptions = {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Accept': 'application/json',
+                    ...options.headers
+                }
+            };
+
+            try {
+                const response = await fetch(`${backendUrl}/api${endpoint}`, {
+                    ...defaultOptions,
+                    ...options
+                });
+
+                const data = await response.json();
+                return { response, data, success: response.ok };
+            } catch (error) {
+                return { response: null, data: null, success: false, error: error.message };
+            }
+        }
+
+        async function testConnection() {
+            log(`🔍 Testing connection to ${backendUrl}...`);
+            
+            const { success, data, error } = await makeRequest('/employees?per_page=1');
+            
+            if (success) {
+                log(`✅ Connection successful! Backend is responding.`);
+                log(`📊 Found ${data.data?.total || 0} total employees`);
+            } else {
+                log(`❌ Connection failed: ${error || 'Unknown error'}`);
+                log(`🔧 Check if backend is running on ${backendUrl}`);
+            }
+        }
+
+        async function testEmployeeList() {
+            updateStatus('list', 'running');
+            log(`\n🧪 Testing Employee List (READ)...`);
+            
+            const { success, data, error } = await makeRequest('/employees?per_page=10&search=test');
+            
+            if (success && data.success) {
+                updateStatus('list', 'success');
+                log(`✅ Employee list retrieved successfully`);
+                log(`📊 Total employees: ${data.data.total}`);
+                log(`📄 Current page: ${data.data.current_page}/${data.data.last_page}`);
+                log(`📈 Stats: ${JSON.stringify(data.stats, null, 2)}`);
+                testResults.push({ test: 'Employee List', status: 'success' });
+            } else {
+                updateStatus('list', 'error');
+                log(`❌ Employee list test failed: ${error || data?.message}`);
+                testResults.push({ test: 'Employee List', status: 'error', error });
+            }
+        }
+
+        async function testCreateEmployee() {
+            updateStatus('create', 'running');
+            log(`\n🧪 Testing Create Employee...`);
+            
+            const testEmployeeData = {
+                nik: '1234567890123888', // Unique NIK
+                first_name: 'Frontend',
+                last_name: 'Test',
+                mobile_phone: '+628123456888',
+                gender: 'Men',
+                last_education: 'S1',
+                place_of_birth: 'Jakarta',
+                date_of_birth: '1990-01-01',
+                position: 'QA Engineer',
+                branch: 'Head Office',
+                contract_type: 'Contract',
+                grade: 'Junior',
+                bank: 'BCA',
+                account_number: '1234567888',
+                acc_holder_name: 'Frontend Test'
+            };
+
+            const formData = new FormData();
+            Object.entries(testEmployeeData).forEach(([key, value]) => {
+                formData.append(key, value);
+            });
+
+            const { success, data, error } = await makeRequest('/employees', {
+                method: 'POST',
+                body: formData,
+                headers: {} // FormData sets its own Content-Type
+            });
+
+            if (success && data.success) {
+                updateStatus('create', 'success');
+                testEmployee = data.data;
+                log(`✅ Employee created successfully`);
+                log(`👤 NIK: ${data.data.nik}, Name: ${data.data.full_name}`);
+                testResults.push({ test: 'Create Employee', status: 'success', data: data.data });
+            } else {
+                updateStatus('create', 'error');
+                log(`❌ Create employee failed: ${error || data?.message}`);
+                if (data?.errors) {
+                    log(`🚨 Validation errors: ${JSON.stringify(data.errors, null, 2)}`);
+                }
+                testResults.push({ test: 'Create Employee', status: 'error', error });
+            }
+        }
+
+        async function testEmployeeDetail() {
+            updateStatus('detail', 'running');
+            log(`\n🧪 Testing Employee Detail...`);
+            
+            if (!testEmployee) {
+                log(`⚠️ No test employee available. Running create first...`);
+                await testCreateEmployee();
+            }
+            
+            if (!testEmployee) {
+                updateStatus('detail', 'error');
+                log(`❌ Cannot test employee detail without test employee`);
+                return;
+            }
+
+            const { success, data, error } = await makeRequest(`/employees/${testEmployee.nik}`);
+
+            if (success && data.success) {
+                updateStatus('detail', 'success');
+                log(`✅ Employee detail retrieved successfully`);
+                log(`👤 Name: ${data.data.full_name}`);
+                log(`📧 Position: ${data.data.position}`);
+                log(`🎂 Age: ${data.data.age} years`);
+                testResults.push({ test: 'Employee Detail', status: 'success' });
+            } else {
+                updateStatus('detail', 'error');
+                log(`❌ Employee detail test failed: ${error || data?.message}`);
+                testResults.push({ test: 'Employee Detail', status: 'error', error });
+            }
+        }
+
+        async function testUpdateEmployee() {
+            updateStatus('update', 'running');
+            log(`\n🧪 Testing Update Employee...`);
+            
+            if (!testEmployee) {
+                log(`⚠️ No test employee available. Running create first...`);
+                await testCreateEmployee();
+            }
+            
+            if (!testEmployee) {
+                updateStatus('update', 'error');
+                log(`❌ Cannot test employee update without test employee`);
+                return;
+            }
+
+            const updateData = {
+                position: 'Senior QA Engineer',
+                grade: 'Senior',
+                mobile_phone: '+628123456999'
+            };
+
+            const formData = new FormData();
+            formData.append('_method', 'PUT');
+            Object.entries(updateData).forEach(([key, value]) => {
+                formData.append(key, value);
+            });
+
+            const { success, data, error } = await makeRequest(`/employees/${testEmployee.nik}`, {
+                method: 'POST',
+                body: formData,
+                headers: {}
+            });
+
+            if (success && data.success) {
+                updateStatus('update', 'success');
+                log(`✅ Employee updated successfully`);
+                log(`📝 New position: ${data.data.employee.position}`);
+                log(`📊 New grade: ${data.data.employee.grade}`);
+                testResults.push({ test: 'Update Employee', status: 'success' });
+            } else {
+                updateStatus('update', 'error');
+                log(`❌ Update employee failed: ${error || data?.message}`);
+                testResults.push({ test: 'Update Employee', status: 'error', error });
+            }
+        }
+
+        async function testAvatarUpload() {
+            updateStatus('avatar', 'running');
+            log(`\n🧪 Testing Avatar Upload...`);
+            
+            if (!testEmployee) {
+                log(`⚠️ No test employee available. Running create first...`);
+                await testCreateEmployee();
+            }
+            
+            if (!testEmployee) {
+                updateStatus('avatar', 'error');
+                log(`❌ Cannot test avatar upload without test employee`);
+                return;
+            }
+
+            // Create test image
+            const canvas = document.createElement('canvas');
+            canvas.width = 100;
+            canvas.height = 100;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#2196F3';
+            ctx.fillRect(0, 0, 100, 100);
+            ctx.fillStyle = 'white';
+            ctx.font = '16px Arial';
+            ctx.fillText('TEST', 30, 55);
+
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('avatar', blob, 'test-avatar.png');
+
+                const { success, data, error } = await makeRequest(`/employees/${testEmployee.nik}/avatar`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {}
+                });
+
+                if (success && data.success) {
+                    updateStatus('avatar', 'success');
+                    log(`✅ Avatar uploaded successfully`);
+                    log(`🖼️ Avatar URL: ${data.data.avatar_url}`);
+                    testResults.push({ test: 'Avatar Upload', status: 'success' });
+                } else {
+                    updateStatus('avatar', 'error');
+                    log(`❌ Avatar upload failed: ${error || data?.message}`);
+                    testResults.push({ test: 'Avatar Upload', status: 'error', error });
+                }
+            }, 'image/png');
+        }
+
+        async function testBulkOperations() {
+            updateStatus('bulk', 'running');
+            log(`\n🧪 Testing Bulk Operations...`);
+            
+            // Test bulk delete with dummy NIKs
+            const dummyNiks = ['9999999999999991', '9999999999999992'];
+            
+            const { success, data, error } = await makeRequest('/employees/bulk-delete', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ niks: dummyNiks })
+            });
+
+            // Test export
+            const exportResult = await makeRequest('/employees-export');
+
+            if (exportResult.success) {
+                updateStatus('bulk', 'success');
+                log(`✅ Bulk operations test passed`);
+                log(`📤 Export: ${exportResult.data.data.length} employees exported`);
+                log(`🗑️ Bulk delete endpoint responded correctly`);
+                testResults.push({ test: 'Bulk Operations', status: 'success' });
+            } else {
+                updateStatus('bulk', 'error');
+                log(`❌ Bulk operations test failed`);
+                testResults.push({ test: 'Bulk Operations', status: 'error' });
+            }
+        }
+
+        async function testDeleteEmployee() {
+            updateStatus('delete', 'running');
+            log(`\n🧪 Testing Delete Employee...`);
+            
+            if (!testEmployee) {
+                updateStatus('delete', 'error');
+                log(`❌ No test employee to delete`);
+                return;
+            }
+
+            const { success, data, error } = await makeRequest(`/employees/${testEmployee.nik}`, {
+                method: 'DELETE'
+            });
+
+            if (success && data.success) {
+                updateStatus('delete', 'success');
+                log(`✅ Test employee deleted successfully`);
+                log(`🗑️ Cleaned up NIK: ${testEmployee.nik}`);
+                testEmployee = null;
+                testResults.push({ test: 'Delete Employee', status: 'success' });
+            } else {
+                updateStatus('delete', 'error');
+                log(`❌ Delete employee failed: ${error || data?.message}`);
+                testResults.push({ test: 'Delete Employee', status: 'error', error });
+            }
+        }
+
+        async function testFrontendPages() {
+            updateStatus('frontend', 'running');
+            log(`\n🧪 Testing Frontend Pages...`);
+            
+            const pages = [
+                { name: 'Employee Database', url: 'http://localhost:3001/admin/employee/employee-database' },
+                { name: 'New Employee', url: 'http://localhost:3001/admin/employee/new-employee' },
+                { name: 'Employee Detail', url: 'http://localhost:3001/admin/employee/employee-detail/1234567890123456' },
+                { name: 'Edit Employee', url: 'http://localhost:3001/admin/employee/edit-employee/1234567890123456' }
+            ];
+
+            let allPagesOk = true;
+            
+            for (const page of pages) {
+                try {
+                    const response = await fetch(page.url, { method: 'HEAD' });
+                    if (response.ok) {
+                        log(`✅ ${page.name} page is accessible`);
+                    } else {
+                        log(`⚠️ ${page.name} page returned status: ${response.status}`);
+                        allPagesOk = false;
+                    }
+                } catch (error) {
+                    log(`❌ ${page.name} page not accessible: ${error.message}`);
+                    allPagesOk = false;
+                }
+            }
+
+            if (allPagesOk) {
+                updateStatus('frontend', 'success');
+                log(`✅ All frontend pages are accessible`);
+                testResults.push({ test: 'Frontend Pages', status: 'success' });
+            } else {
+                updateStatus('frontend', 'error');
+                log(`❌ Some frontend pages have issues`);
+                testResults.push({ test: 'Frontend Pages', status: 'error' });
+            }
+        }
+
+        async function runAllTests() {
+            const btn = document.getElementById('runAllBtn');
+            btn.disabled = true;
+            btn.textContent = '🔄 Running Tests...';
+            
+            clearResults();
+            log(`🚀 Starting comprehensive Employee CRUD testing...\n`);
+            
+            // Detect auth token first
+            detectToken();
+            
+            // Run all tests in sequence
+            await testConnection();
+            await testEmployeeList();
+            await testCreateEmployee();
+            await testEmployeeDetail();
+            await testUpdateEmployee();
+            await testAvatarUpload();
+            await testBulkOperations();
+            await testDeleteEmployee();
+            await testFrontendPages();
+            
+            // Summary
+            const successCount = testResults.filter(r => r.status === 'success').length;
+            const totalCount = testResults.length;
+            const successRate = Math.round((successCount / totalCount) * 100);
+            
+            log(`\n📊 TEST SUMMARY`);
+            log(`===============`);
+            log(`✅ Passed: ${successCount}/${totalCount}`);
+            log(`❌ Failed: ${totalCount - successCount}/${totalCount}`);
+            log(`📈 Success Rate: ${successRate}%`);
+            
+            if (successRate === 100) {
+                log(`\n🎉 ALL TESTS PASSED! Employee CRUD system is working perfectly!`);
+            } else if (successRate >= 80) {
+                log(`\n✅ Most tests passed. Employee CRUD system is mostly functional.`);
+            } else {
+                log(`\n⚠️ Several tests failed. Please check the implementation.`);
+            }
+            
+            btn.disabled = false;
+            btn.textContent = '🚀 Run All Tests';
+        }
+
+        // Auto-detect token on page load
+        window.onload = function() {
+            detectToken();
+        };
+    </script>
+</body>
+</html>

@@ -142,3 +142,76 @@ export function isOvertimeHours(): boolean {
   const now = getJakartaTimeString();
   return now >= WORKING_HOURS.OVERTIME_START;
 }
+
+/**
+ * Get current Jakarta time with automatic formatting for attendance
+ */
+export function getCurrentAttendanceTime(): {
+  time: string;
+  date: string;
+  datetime: string;
+  timezone: string;
+} {
+  const now = new Date();
+  const jakartaTime = new Date(now.toLocaleString('en-US', { timeZone: JAKARTA_TIMEZONE }));
+  
+  return {
+    time: jakartaTime.toLocaleTimeString('id-ID', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }),
+    date: jakartaTime.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }),
+    datetime: jakartaTime.toLocaleString('id-ID', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }),
+    timezone: 'WIB'
+  };
+}
+
+/**
+ * Format attendance record time with timezone
+ */
+export function formatAttendanceTime(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const jakartaTime = dateObj.toLocaleTimeString('id-ID', {
+    timeZone: JAKARTA_TIMEZONE,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  
+  return `${jakartaTime} WIB`;
+}
+
+/**
+ * Get time difference from now for attendance tracking
+ */
+export function getTimeDifferenceFromNow(date: Date | string): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date;
+  const now = new Date();
+  const diffMs = now.getTime() - dateObj.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  
+  if (diffMinutes < 1) return 'Just now';
+  if (diffMinutes < 60) return `${diffMinutes} minutes ago`;
+  
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours} hours ago`;
+  
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays} days ago`;
+}

@@ -176,8 +176,7 @@ export default function UserChecklockPage() {
     <AuthWrapper requireAdmin={false}>
       <DashboardLayout>
         <div className="min-h-screen bg-gray-100 p-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex justify-between items-center mb-4">
+          <div className="bg-white rounded-lg shadow p-4">            <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">My Attendance Records</h2>
               <div className="text-sm text-gray-600">
                 <p>
@@ -202,8 +201,7 @@ export default function UserChecklockPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full sm:w-1/2 border rounded px-3 py-2"
-              />
-              <div className="flex gap-2">
+              />              <div className="flex gap-2">
                 <select
                   value={perPage}
                   onChange={(e) => setPerPage(Number(e.target.value))}
@@ -227,6 +225,14 @@ export default function UserChecklockPage() {
                 >
                   {loading ? 'Loading...' : 'Refresh'}
                 </button>
+                <Link href="/user/absensi">
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center gap-2">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add Data
+                  </button>
+                </Link>
               </div>
             </div>
 

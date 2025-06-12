@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
 import { apiService } from '@/services/api';
+import { getCurrentAttendanceTime, formatAttendanceTime } from '@/lib/timezone';
 
 // Dynamic import untuk Leaflet (hanya di client side)
 const MapComponent = dynamic(() => import('./MapComponent'), {
@@ -24,6 +25,12 @@ interface FormData {
   address: string;
 }
 
+interface RealTimeData {
+  currentTime: string;
+  currentDate: string;
+  timezone: string;
+}
+
 export default function AbsensiForm() {
   const router = useRouter();
   
@@ -37,6 +44,12 @@ export default function AbsensiForm() {
     address: ''
   });
 
+  const [realTimeData, setRealTimeData] = useState<RealTimeData>({
+    currentTime: '',
+    currentDate: '',
+    timezone: 'WIB'
+  });
+
   const [location, setLocation] = useState({
     lat: null as number | null,
     lng: null as number | null,
@@ -48,6 +61,25 @@ export default function AbsensiForm() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  // Update real-time clock every second
+  useEffect(() => {
+    const updateRealTime = () => {
+      const attendanceTime = getCurrentAttendanceTime();
+      setRealTimeData({
+        currentTime: attendanceTime.time,
+        currentDate: attendanceTime.date,
+        timezone: attendanceTime.timezone
+      });
+    };
+
+    // Update immediately
+    updateRealTime();
+    
+    // Update every second
+    const interval = setInterval(updateRealTime, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     getCurrentLocation();
@@ -195,12 +227,12 @@ export default function AbsensiForm() {
       ...prev,
       supporting_evidence: file
     }));
-  };const handleSubmit = async (e: React.FormEvent) => {
+  };  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError("");
-    
+
     if (!formData.absent_type) {
-      setSubmitError('Please select an absent type');
+      setSubmitError('Please select an attendance type');
       return;
     }
 
@@ -210,6 +242,9 @@ export default function AbsensiForm() {
     }
 
     setIsLoading(true);
+      // Capture the exact time when submit is clicked
+    const attendanceTime = getCurrentAttendanceTime();
+    const capturedTime = `${attendanceTime.time} ${attendanceTime.timezone}`;
     
     try {
       // Prepare form data for API service
@@ -239,11 +274,15 @@ export default function AbsensiForm() {
           result = await apiService.breakEnd(submitData);
           break;
         default:
-          throw new Error('Invalid absent type selected');
+          throw new Error('Invalid attendance type selected');
       }
 
       if (result && result.success) {
-        alert(result.message || 'Attendance recorded successfully!');
+        const attendanceType = formData.absent_type === 'clock_in' ? 'Clock In' : 
+                             formData.absent_type === 'clock_out' ? 'Clock Out' :
+                             formData.absent_type === 'break_start' ? 'Break Start' : 'Break End';
+        
+        alert(`✅ ${attendanceType} recorded successfully!\n🕐 Time captured: ${capturedTime}\n📍 Location: ${formData.address}`);
         router.push('/user/checklock');
       } else {
         setSubmitError(result?.message || 'Failed to record attendance');
@@ -262,9 +301,40 @@ export default function AbsensiForm() {
   return (
     <AuthWrapper requireAdmin={false}>
       <DashboardLayout>
-        <div className="p-6 overflow-auto min-h-screen bg-gray-100">
-        <div className="bg-white p-6 rounded shadow-lg max-w-6xl mx-auto">
-        <h2 className="text-2xl font-semibold mb-4">Add Attendance</h2>
+        <div className="p-6 overflow-auto min-h-screen bg-gray-100">        <div className="bg-white p-6 rounded shadow-lg max-w-6xl mx-auto">
+        <div className="flex items-center gap-4 mb-4">
+          <Link href="/user/checklock">
+            <button className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Attendance Records
+            </button>
+          </Link>
+          <h2 className="text-2xl font-semibold">Add Attendance</h2>
+        </div>
+
+        {/* Real-Time Clock Display */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-lg mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Automatic Time Capture</h3>
+              <p className="text-sm opacity-90">Your attendance will be recorded with the current time automatically</p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold font-mono">
+                {realTimeData.currentTime} {realTimeData.timezone}
+              </div>
+              <div className="text-sm opacity-90">
+                {realTimeData.currentDate}
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-2 text-sm">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+            <span>Time will be automatically captured when you submit</span>
+          </div>
+        </div>
         
         {submitError && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -274,10 +344,9 @@ export default function AbsensiForm() {
         
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Kolom Kiri */}
-            <div className="space-y-4">
+            {/* Kolom Kiri */}            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium">Absent Type *</label>
+                <label className="block text-sm font-medium mb-2">Attendance Type *</label>
                 <select 
                   name="absent_type"
                   value={formData.absent_type}
@@ -285,34 +354,50 @@ export default function AbsensiForm() {
                   className="mt-1 w-full border rounded px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
-                  <option value="">Choose Absent Type</option>
-                  <option value="clock_in">Clock In</option>
-                  <option value="clock_out">Clock Out</option>
-                  <option value="break_start">Break Start</option>
-                  <option value="break_end">Break End</option>
+                  <option value="">Choose Attendance Type</option>
+                  <option value="clock_in">🕘 Clock In</option>
+                  <option value="clock_out">🕔 Clock Out</option>
+                  <option value="break_start">☕ Break Start</option>
+                  <option value="break_end">🔄 Break End</option>
                 </select>
+                {formData.absent_type && (
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="font-medium">Selected:</span>
+                      <span>{formData.absent_type === 'clock_in' ? 'Clock In' : 
+                             formData.absent_type === 'clock_out' ? 'Clock Out' :
+                             formData.absent_type === 'break_start' ? 'Break Start' : 'Break End'}</span>
+                    </div>
+                    <div className="text-gray-600 mt-1">
+                      Time will be automatically recorded as: <span className="font-mono font-bold">{realTimeData.currentTime} {realTimeData.timezone}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
+              {/* Auto-filled Date Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium">Start Date</label>
+                  <label className="block text-sm font-medium">Date (Auto-filled)</label>
                   <input 
                     type="date" 
                     name="start_date"
-                    value={formData.start_date}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    value={new Date().toISOString().split('T')[0]}
+                    className="w-full border rounded px-3 py-2 mt-1 bg-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    readOnly
                   />
+                  <p className="text-xs text-gray-500 mt-1">Automatically set to today</p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium">End Date</label>
+                  <label className="block text-sm font-medium">Time (Auto-captured)</label>
                   <input 
-                    type="date" 
-                    name="end_date"
-                    value={formData.end_date}
-                    onChange={handleInputChange}
-                    className="w-full border rounded px-3 py-2 mt-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                    type="text"
+                    value={`${realTimeData.currentTime} ${realTimeData.timezone}`}
+                    className="w-full border rounded px-3 py-2 mt-1 bg-gray-100 font-mono"
+                    readOnly
                   />
+                  <p className="text-xs text-gray-500 mt-1">Live time - will be captured on submit</p>
                 </div>
               </div>
 
@@ -421,9 +506,7 @@ export default function AbsensiForm() {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Footer buttons */}
+          </div>          {/* Footer buttons */}
           <div className="flex justify-end space-x-4 mt-6">
             <Link href="/user/checklock">
               <button 
@@ -436,11 +519,23 @@ export default function AbsensiForm() {
             <button 
               type="submit"
               disabled={!location.lat || !location.lng || isLoading || !formData.absent_type}
-              className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              className="px-6 py-2 bg-black text-white rounded hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
-              {isLoading ? 'Saving...' : 'Save'}
+              {isLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Recording...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Record Attendance at {realTimeData.currentTime}
+                </>
+              )}
             </button>
-          </div>        </form>
+          </div></form>
       </div>
     </div>
       </DashboardLayout>

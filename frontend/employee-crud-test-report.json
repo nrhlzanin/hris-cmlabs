@@ -1,0 +1,95 @@
+{
+  "testSuite": "Employee CRUD API Tests",
+  "timestamp": "2025-06-12T02:19:29.299Z",
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "successRate": 100
+  },
+  "results": [
+    {
+      "testName": "GET Employees List",
+      "success": true,
+      "message": "Retrieved 10 employees",
+      "data": {
+        "total": 10,
+        "current_page": 1,
+        "stats": {
+          "total_employees": 10,
+          "active_employees": 10,
+          "inactive_employees": 0,
+          "men_count": 7,
+          "women_count": 3,
+          "permanent_count": 9,
+          "contract_count": 1,
+          "by_branch": {
+            "Mokka": 1,
+            "Test Branch": 1,
+            "Main Office": 5,
+            "Head Office": 3
+          }
+        }
+      },
+      "timestamp": "2025-06-12T02:19:12.144Z"
+    },
+    {
+      "testName": "CREATE Employee",
+      "success": true,
+      "message": "Employee created successfully",
+      "data": {
+        "nik": "1111222233334444",
+        "position": "API Tester"
+      },
+      "timestamp": "2025-06-12T02:19:14.787Z"
+    },
+    {
+      "testName": "GET Single Employee",
+      "success": true,
+      "message": "Employee details retrieved",
+      "data": {},
+      "timestamp": "2025-06-12T02:19:17.453Z"
+    },
+    {
+      "testName": "UPDATE Employee",
+      "success": true,
+      "message": "Employee updated successfully",
+      "data": {
+        "new_position": "Senior API Tester",
+        "new_grade": "Lead"
+      },
+      "timestamp": "2025-06-12T02:19:20.832Z"
+    },
+    {
+      "testName": "EXPORT Employees",
+      "success": true,
+      "message": "Exported 11 employees",
+      "data": {
+        "count": 11
+      },
+      "timestamp": "2025-06-12T02:19:23.302Z"
+    },
+    {
+      "testName": "BULK DELETE",
+      "success": true,
+      "message": "Bulk delete endpoint working correctly",
+      "data": {
+        "status": 422,
+        "message": "Validation failed"
+      },
+      "timestamp": "2025-06-12T02:19:26.512Z"
+    },
+    {
+      "testName": "DELETE Employee",
+      "success": true,
+      "message": "Test employee deleted (NIK: 1111222233334444)",
+      "data": null,
+      "timestamp": "2025-06-12T02:19:29.298Z"
+    }
+  ],
+  "environment": {
+    "backend": "http://localhost:8000",
+    "node_version": "v20.19.1",
+    "platform": "win32"
+  }
+}

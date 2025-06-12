@@ -457,6 +457,235 @@ class CheckClockController extends Controller
     }
 
     /**
+     * Get dashboard attendance summary with today's statistics
+     */
+    public function dashboardAttendanceSummary(Request $request): JsonResponse
+    {
+        // Check if user is admin
+        if (!in_array($request->user()->role, ['admin', 'super_admin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access'
+            ], 403);
+        }
+
+        $today = TimezoneHelper::getJakartaDate();
+        
+        // Get all active users
+        $totalEmployees = \App\Models\User::where('status', 'active')->count();
+        
+        // Get today's attendance records
+        $todayRecords = CheckClock::with('user')
+            ->whereDate('check_clock_time', $today)
+            ->get();
+
+        // Group by user to get unique attendees
+        $attendeesByUser = $todayRecords->groupBy('user_id');
+        
+        $presentToday = $attendeesByUser->count();
+        $absentToday = $totalEmployees - $presentToday;
+        
+        // Count late arrivals (after 09:00 WIB)
+        $lateToday = $attendeesByUser->filter(function ($userRecords) {
+            $clockIn = $userRecords->where('check_clock_type', 'clock_in')->first();
+            if (!$clockIn) return false;
+            
+            $clockInTime = Carbon::parse($clockIn->check_clock_time);
+            $lateThreshold = $clockInTime->copy()->setTime(9, 0, 0); // 09:00 WIB
+            
+            return $clockInTime->isAfter($lateThreshold);
+        })->count();
+
+        // Count early leaves (before 17:00 WIB)
+        $earlyLeaveToday = $attendeesByUser->filter(function ($userRecords) {
+            $clockOut = $userRecords->where('check_clock_type', 'clock_out')->first();
+            if (!$clockOut) return false;
+            
+            $clockOutTime = Carbon::parse($clockOut->check_clock_time);
+            $earlyThreshold = $clockOutTime->copy()->setTime(17, 0, 0); // 17:00 WIB
+            
+            return $clockOutTime->isBefore($earlyThreshold);
+        })->count();
+
+        $attendanceRate = $totalEmployees > 0 ? round(($presentToday / $totalEmployees) * 100, 1) : 0;
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total_employees' => $totalEmployees,
+                'present_today' => $presentToday,
+                'absent_today' => $absentToday,
+                'late_today' => $lateToday,
+                'early_leave_today' => $earlyLeaveToday,
+                'attendance_rate' => $attendanceRate
+            ]
+        ], 200);
+    }
+
+    /**
+     * Get recent activities for dashboard
+     */
+    public function recentActivities(Request $request): JsonResponse
+    {
+        // Check if user is admin
+        if (!in_array($request->user()->role, ['admin', 'super_admin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access'
+            ], 403);
+        }
+
+        $limit = $request->get('limit', 10);
+        
+        $recentRecords = CheckClock::with(['user.employee'])
+            ->orderBy('check_clock_time', 'desc')
+            ->limit($limit)
+            ->get();
+
+        $activities = $recentRecords->map(function ($record) {
+            $employeeName = $record->user->employee 
+                ? $record->user->employee->first_name . ' ' . $record->user->employee->last_name
+                : $record->user->name;
+
+            $action = match($record->check_clock_type) {
+                'clock_in' => 'checked in',
+                'clock_out' => 'checked out',
+                'break_start' => 'started break',
+                'break_end' => 'ended break',
+                default => $record->check_clock_type
+            };
+
+            return [
+                'id' => $record->id,
+                'employee_name' => $employeeName,
+                'action' => $action,
+                'time' => TimezoneHelper::formatJakartaTime($record->check_clock_time, 'Y-m-d H:i:s'),
+                'status' => $record->approval_status ?? 'approved'
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $activities
+        ], 200);
+    }
+
+    /**
+     * Get today's status for all employees (Admin dashboard)
+     */
+    public function allEmployeesTodayStatus(Request $request): JsonResponse
+    {
+        // Check if user is admin
+        if (!in_array($request->user()->role, ['admin', 'super_admin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access'
+            ], 403);
+        }
+
+        $today = TimezoneHelper::getJakartaDate();
+        
+        // Get all active users with their employees
+        $users = \App\Models\User::with('employee')
+            ->where('status', 'active')
+            ->get();
+
+        // Get today's attendance records for all users
+        $todayRecords = CheckClock::with('user')
+            ->whereDate('check_clock_time', $today)
+            ->get()
+            ->groupBy('user_id');
+
+        $employeeStatuses = $users->map(function ($user) use ($todayRecords) {
+            $userRecords = $todayRecords->get($user->id_users, collect());
+            
+            $clockIn = $userRecords->where('check_clock_type', 'clock_in')->first();
+            $clockOut = $userRecords->where('check_clock_type', 'clock_out')->first();
+
+            $employeeName = $user->employee 
+                ? $user->employee->first_name . ' ' . $user->employee->last_name
+                : $user->name;
+
+            $workHours = null;
+            $status = 'absent';
+
+            if ($clockIn && $clockOut) {
+                $workHours = $this->calculateWorkHours(
+                    Carbon::parse($clockIn->check_clock_time),
+                    Carbon::parse($clockOut->check_clock_time)
+                );
+                
+                // Check if late
+                $clockInTime = Carbon::parse($clockIn->check_clock_time);
+                $lateThreshold = $clockInTime->copy()->setTime(9, 0, 0);
+                $status = $clockInTime->isAfter($lateThreshold) ? 'late' : 'present';
+            } elseif ($clockIn) {
+                // Check if late
+                $clockInTime = Carbon::parse($clockIn->check_clock_time);
+                $lateThreshold = $clockInTime->copy()->setTime(9, 0, 0);
+                $status = $clockInTime->isAfter($lateThreshold) ? 'late' : 'present';
+                $workHours = 'In Progress';
+            }
+
+            return [
+                'employee_id' => $user->id_users,
+                'employee_name' => $employeeName,
+                'check_in' => $clockIn ? TimezoneHelper::formatJakartaTime($clockIn->check_clock_time, 'H:i:s') : null,
+                'check_out' => $clockOut ? TimezoneHelper::formatJakartaTime($clockOut->check_clock_time, 'H:i:s') : null,
+                'status' => $status,
+                'work_hours' => $workHours
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $employeeStatuses
+        ], 200);
+    }
+
+    /**
+     * Get weekly attendance data for dashboard charts
+     */
+    public function weeklyAttendance(Request $request): JsonResponse
+    {
+        // Check if user is admin
+        if (!in_array($request->user()->role, ['admin', 'super_admin'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized access'
+            ], 403);
+        }
+
+        $startDate = now()->startOfWeek();
+        $endDate = now()->endOfWeek();
+        
+        $totalEmployees = \App\Models\User::where('status', 'active')->count();
+        
+        $weeklyData = [];
+        
+        for ($date = $startDate->copy(); $date->lte($endDate); $date->addDay()) {
+            $dayRecords = CheckClock::whereDate('check_clock_time', $date->format('Y-m-d'))
+                ->get()
+                ->groupBy('user_id');
+            
+            $present = $dayRecords->count();
+            $absent = $totalEmployees - $present;
+            
+            $weeklyData[] = [
+                'date' => $date->format('Y-m-d'),
+                'present' => $present,
+                'absent' => $absent,
+                'total' => $totalEmployees
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $weeklyData
+        ], 200);
+    }
+
+    /**
      * Group check clocks by date and transform to match frontend format
      */
     private function groupByDateAndTransform($checkClocks, $statusFilter = null): array
