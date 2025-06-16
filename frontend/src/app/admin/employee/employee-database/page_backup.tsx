@@ -1,7 +1,7 @@
 ﻿'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/layout/NavbarLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
 import { employeeService, Employee as EmployeeType, EmployeeFilters } from '@/services/employee';
 

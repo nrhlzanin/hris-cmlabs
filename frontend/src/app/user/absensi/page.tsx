@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/layout/NavbarLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
 import { apiService } from '@/services/api';
 import { getCurrentAttendanceTime, formatAttendanceTime } from '@/lib/timezone';

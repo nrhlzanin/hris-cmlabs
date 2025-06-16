@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { overtimeService, type OvertimeRecord } from '@/services/overtime';
 import { formatJakartaDate, formatJakartaTime } from '@/lib/timezone';
 import AuthWrapper from '@/components/auth/AuthWrapper';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/layout/NavbarLayout';
 
 export default function AdminOvertimePage() {
   const [overtimeRecords, setOvertimeRecords] = useState<OvertimeRecord[]>([]);

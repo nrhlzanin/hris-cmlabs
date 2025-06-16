@@ -6,7 +6,7 @@ import ProfileHeader from '@/app/components/admin/profile/profilecard';
 import SalaryDetail from '@/app/components/admin/profile/salarydetail';
 import WorkHours from '@/app/components/admin/profile/workhours';
 import AuthWrapper from '@/components/auth/AuthWrapper';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/layout/NavbarLayout';
 
 export default function ProfilePage() {
   const startDate = formatJakartaDate(new Date('2045-12-30'), {

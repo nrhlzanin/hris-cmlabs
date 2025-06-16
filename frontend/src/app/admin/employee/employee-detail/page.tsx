@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/layout/NavbarLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
 import { employeeService, Employee } from '@/services/employee';
 import { formatJakartaDate } from '@/lib/timezone';

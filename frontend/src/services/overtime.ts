@@ -126,7 +126,10 @@ export interface OvertimeFilters {
   sort_order?: 'asc' | 'desc';
 }
 
-class OvertimeService {  /**
+class OvertimeService {
+  updateOvertimeCompletion(formData: FormData) {
+    throw new Error('Method not implemented.');
+  }  /**
    * Get overtime requests with filters and pagination
    */
   async getOvertimeRecords(filters: OvertimeFilters = {}): Promise<OvertimeListResponse> {

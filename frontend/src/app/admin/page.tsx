@@ -2,7 +2,7 @@
 
 import { BarChart, Calendar, CheckCircle, Clock, Users, FileText, TrendingUp, AlertCircle } from "lucide-react";
 import { useJakartaTime, useWorkingHours } from '@/hooks/use-timezone';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/layout/NavbarLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
 
 export default function DashboardPage() {

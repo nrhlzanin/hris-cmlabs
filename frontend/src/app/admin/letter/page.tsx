@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { formatJakartaDate } from '@/lib/timezone';
 import { EyeIcon } from '@heroicons/react/24/outline';
 import { apiService } from '@/services/api';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/layout/NavbarLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
 
 // Define the letter type

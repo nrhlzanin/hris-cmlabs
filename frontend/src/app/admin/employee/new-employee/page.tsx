@@ -3,7 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AuthWrapper from '@/components/auth/AuthWrapper';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/layout/NavbarLayout';
 import { employeeService, EmployeeCreateData } from '@/services/employee';
 
 interface FormData {

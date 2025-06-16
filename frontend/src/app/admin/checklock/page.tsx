@@ -6,7 +6,7 @@ import { FaCheck, FaTimes, FaPlus, FaChevronLeft, FaChevronRight } from "react-i
 import ApprovalModal from "@/app/components/admin/checklock/approval";
 import DetailsModal from "@/app/components/admin/checklock/detailsmodal";
 import { formatJakartaDate } from '@/lib/timezone';
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/layout/NavbarLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
 import { attendanceService, AdminAttendanceRecord, AttendanceFilters } from '@/services/attendance';
 

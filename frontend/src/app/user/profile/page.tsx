@@ -2,7 +2,7 @@
 
 import { formatJakartaDate } from '@/lib/timezone';
 import React from "react";
-import DashboardLayout from '@/components/layout/DashboardLayout';
+import DashboardLayout from '@/components/layout/NavbarLayout';
 import AuthWrapper from '@/components/auth/AuthWrapper';
 
 export default function ProfilePage() {
