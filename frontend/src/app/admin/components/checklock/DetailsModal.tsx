@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from "react";
 import { FaDownload, FaEye, FaEyeSlash, FaTimes } from "react-icons/fa";
 
@@ -7,6 +9,7 @@ interface DetailsModalProps {
     id: number;
     name: string;
     position: string;
+    date: string;
     clockIn: string;
     clockOut: string;
     workHours: string;
@@ -40,7 +43,6 @@ const DetailsModal: React.FC<DetailsModalProps> = ({
           </button>
         </div>
 
-        {/* Profile */}
         <div className="flex items-center gap-4 mb-4 border-b pb-4">
           <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl font-bold">
             {selectedData.name.charAt(0)}
@@ -51,12 +53,11 @@ const DetailsModal: React.FC<DetailsModalProps> = ({
           </div>
         </div>
 
-        {/* Info */}
         <h3 className="font-semibold text-gray-900 mb-2">Attendance Information</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 border-b pb-4">
           <div>
             <p className="text-sm text-gray-800">Date</p>
-            <p className="font-semibold text-gray-900">1 March 2025</p>
+            <p className="font-semibold text-gray-900">{selectedData.date}</p>
           </div>
           <div>
             <p className="text-sm text-gray-800">Check In</p>
@@ -82,7 +83,6 @@ const DetailsModal: React.FC<DetailsModalProps> = ({
           </div>
         </div>
 
-        {/* Location */}
         <h3 className="font-semibold text-gray-900 mb-2">Location Information</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 border-b pb-4">
           <div>
@@ -103,19 +103,18 @@ const DetailsModal: React.FC<DetailsModalProps> = ({
           </div>
         </div>
 
-        {/* Proof of Attendance */}
         <div>
           <h3 className="font-semibold text-gray-900 mb-2">Proof of Attendance</h3>
           <div className="flex items-center gap-4">
             <span className="text-gray-700">{selectedData.fileName}</span>
-            <button onClick={toggleVisibility} className="text-gray-600 hover:text-gray-800 text-sm">
+            <button onClick={toggleVisibility} className="text-gray-600 hover:text-gray-800 text-sm" title={isVisible ? "Hide Proof" : "Show Proof"}>
               {isVisible ? (
                 <FaEyeSlash className="inline-block" />
               ) : (
                 <FaEye className="inline-block" />
               )}
             </button>
-            <button className="text-blue-600 hover:text-blue-800 text-sm">
+            <button className="text-blue-600 hover:text-blue-800 text-sm" title="Download Proof">
               <FaDownload className="inline-block mr-2" />
             </button>
           </div>

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from "react";
 import { AdminAttendanceRecord } from '@/services/attendance';
 
@@ -61,7 +63,6 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
     closeModal();
   };
 
-  // Determine current approval status
   const isAlreadyProcessed = selectedData.approval_status !== 'pending' && selectedData.approval_status !== undefined;
 
   return (
@@ -93,7 +94,6 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
           </button>
         </div>
 
-        {/* Show current status if already processed */}
         {isAlreadyProcessed && (
           <div className="mb-4 p-3 rounded-lg bg-gray-50">
             <div className="flex items-center gap-2 mb-2">
@@ -106,7 +106,7 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
               </span>
               {selectedData.approved_at && (
                 <span className="text-xs text-gray-500">
-                  on {new Date(selectedData.approved_at).toLocaleDateString()}
+                  on {new Date(selectedData.approved_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}
                 </span>
               )}
             </div>
@@ -118,14 +118,12 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
           </div>
         )}
 
-        {/* Error Message */}
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
             {error}
           </div>
         )}
 
-        {/* Notes Input */}
         {!isAlreadyProcessed && (
           <div className="mb-6">
             <label htmlFor="admin-notes" className="block text-sm font-medium text-gray-700 mb-2">
@@ -143,7 +141,6 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
           </div>
         )}
 
-        {/* Action Buttons */}
         {!isAlreadyProcessed && (
           <div className="flex justify-center gap-4">
             <button
@@ -163,7 +160,6 @@ const ApprovalModal: React.FC<ApprovalModalProps> = ({
           </div>
         )}
 
-        {/* Close button for already processed records */}
         {isAlreadyProcessed && (
           <div className="flex justify-center">
             <button

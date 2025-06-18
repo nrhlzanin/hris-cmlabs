@@ -16,7 +16,9 @@ export default function SignInForm() {
         password: "",
         general: "",
     });
-    const [showPassword, setShowPassword] = useState(false);    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const [showPassword, setShowPassword] = useState(false);
+
+    const handleSubmit = async (e: { preventDefault: () => void; }) => {
         e.preventDefault();
 
         const newErrors = {
@@ -37,11 +39,14 @@ export default function SignInForm() {
         setIsLoading(true);
 
         try {
-            const success = await login(email, password, rememberMe);
+            const user = await login(email, password, rememberMe);
 
-            if (success) {
-                // Redirect will be handled by the auth system
-                router.push('/user');
+            if (user) {
+                if (user.role === 'admin' || user.role === 'super_admin') {
+                    router.push('/admin');
+                } else {
+                    router.push('/user');
+                }
             } else {
                 setErrors({
                     email: "",
@@ -50,7 +55,6 @@ export default function SignInForm() {
                 });
             }
         } catch (error) {
-            console.error('Login error:', error);
             setErrors({
                 email: "",
                 password: "",
@@ -59,7 +63,9 @@ export default function SignInForm() {
         } finally {
             setIsLoading(false);
         }
-    };return (
+    };
+
+    return (
         <form onSubmit={handleSubmit} className="space-y-5 text-black">
             {errors.general && (
                 <div className="p-3 rounded bg-red-100 border border-red-400 text-red-700 text-sm">

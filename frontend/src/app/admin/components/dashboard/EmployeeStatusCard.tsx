@@ -41,7 +41,7 @@ export default function EmployeeStatusCard() {
           </Select>
         </div>
 
-        <div className="flex gap-6 text-sm text-gray-600 mb-6">
+        <div className="flex gap-6 text-sm text-gray-600 mb-6 flex-wrap justify-center sm:justify-start">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-green-600"></span>
             <span><strong className="text-black">142</strong> On Time</span>
@@ -56,7 +56,7 @@ export default function EmployeeStatusCard() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto" style={{ aspectRatio: '16 / 9' }}>
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-100">

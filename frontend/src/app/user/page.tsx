@@ -16,7 +16,6 @@ import ProfileCard from '@/app/user/components/dashboard/ProfileCard';
 import AttendanceSummary from '@/app/user/components/dashboard/AttendanceSummary';
 
 const UserDashboardPage: React.FC = () => {
-  // 2. Inisialisasi router dan semua state yang dibutuhkan
   const router = useRouter();
   const { formattedDate } = useJakartaTime();
   const { isWorkingHours, isOvertimeHours, currentTime } = useWorkingHours();
@@ -26,10 +25,7 @@ const UserDashboardPage: React.FC = () => {
   const [checkInTime, setCheckInTime] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Efek ini akan mensimulasikan pengambilan data status check-in saat komponen dimuat
   useEffect(() => {
-    // Di aplikasi nyata, ini akan menjadi panggilan API ke server Anda
-    // Untuk demo, Anda bisa ubah nilai ini untuk melihat perbedaannya
     const userHasCheckedIn = false; 
 
     if (userHasCheckedIn) {
@@ -38,8 +34,6 @@ const UserDashboardPage: React.FC = () => {
     }
   }, []);
 
-
-  // 3. Definisikan kembali fungsi-fungsi handler untuk interaksi
   const handleStatusCardClick = () => {
     if (!isCheckedIn) {
       setIsModalOpen(true);

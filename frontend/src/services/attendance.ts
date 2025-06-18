@@ -35,6 +35,7 @@ export interface CheckClockRecord {
 }
 
 export interface AdminAttendanceRecord {
+  proof_file_url: any;
   id: number;
   name: string;
   position: string;
